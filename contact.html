@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | CAPITAL Paradox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'capital-red': '#DC2626',
+                        'void-black': '#050505',
+                    },
+                    fontFamily: {
+                        'display': ['Bebas Neue', 'sans-serif'],
+                        'script': ['Dancing Script', 'cursive'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'body': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; color: #FAFAFA; }
+        .input-field {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            color: white;
+            transition: all 0.3s;
+        }
+        .input-field:focus {
+            border-color: #DC2626;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+        }
+        .success-banner {
+            display: none;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border: 1px solid #22c55e;
+            color: #22c55e;
+        }
+        .error-banner {
+            display: none;
+            background: linear-gradient(90deg, rgba(220, 38, 38, 0.1), rgba(220, 38, 38, 0.05));
+            border: 1px solid #DC2626;
+            color: #DC2626;
+        }
+        .locked-overlay {
+            background: rgba(5, 5, 5, 0.95);
+            border: 2px solid #DC2626;
+            position: relative;
+            overflow: hidden;
+        }
+        .locked-overlay::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(220, 38, 38, 0.03) 10px,
+                rgba(220, 38, 38, 0.03) 20px
+            );
+            animation: slide 20s linear infinite;
+        }
+        @keyframes slide {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        .classified-stamp {
+            transform: rotate(-5deg);
+            border: 3px solid #DC2626;
+            color: #DC2626;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.3em;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .mobile-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(5, 5, 5, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid rgba(220, 38, 38, 0.3);
+                z-index: 50;
+                padding: 12px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .content-padding { padding-bottom: 80px; }
+        }
+        @media (min-width: 769px) { .mobile-nav { display: none; } }
+    </style>
+</head>
+<body class="font-body content-padding">
+
+    <!-- Desktop Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-void-black/95 backdrop-blur-md border-b border-capital-red/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <span class="font-display text-3xl tracking-wider text-white">CAPITAL</span>
+                    <span class="font-script text-2xl text-capital-red -rotate-6">Paradox</span>
+                </a>
+                <div class="hidden md:flex space-x-8 font-mono text-sm tracking-widest">
+                    <a href="index.html" class="text-gray-400 hover:text-white py-2">HOME</a>
+                    <a href="rounds.html" class="text-gray-400 hover:text-white py-2">ROUNDS</a>
+                    <a href="rules.html" class="text-gray-400 hover:text-white py-2">RULES</a>
+                    <a href="contact.html" class="text-white bg-capital-red border border-capital-red px-6 py-2">REGISTER</a>
+                </div>
+                <button class="md:hidden text-white" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-void-black border-b border-capital-red/20 absolute w-full">
+            <div class="px-4 pt-2 pb-6 space-y-2 font-mono">
+                <a href="index.html" class="block py-2 text-gray-400">HOME</a>
+                <a href="rounds.html" class="block py-2 text-gray-400">ROUNDS</a>
+                <a href="rules.html" class="block py-2 text-gray-400">RULES</a>
+                <a href="contact.html" class="block py-2 text-white">REGISTER</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-20 min-h-screen flex flex-col lg:flex-row">
+        
+        <!-- Coordinator Info -->
+        <div class="lg:w-1/3 bg-neutral-900 p-6 md:p-12 border-r border-capital-red/20">
+            <div class="max-w-sm mx-auto lg:mx-0">
+                <span class="font-mono text-capital-red text-xs tracking-widest">COMMUNICATION</span>
+                <h2 class="font-display text-3xl md:text-4xl text-white mt-2 mb-6">COORDINATORS</h2>
+                
+                <div class="space-y-6 font-mono text-sm">
+                    <div class="border-l-2 border-capital-red pl-4">
+                        <p class="text-white font-bold">Sayed Fazil</p>
+                        <p class="text-gray-400 text-xs">Dept. of Commerce</p>
+                        <a href="tel:8660921795" class="text-capital-red hover:text-white transition-colors text-sm block mt-1">8660921795</a>
+                    </div>
+                    <div class="border-l-2 border-capital-red pl-4">
+                        <p class="text-white font-bold">Fathima Lubna</p>
+                        <p class="text-gray-400 text-xs">Dept. of Management</p>
+                        <a href="tel:7902322321" class="text-capital-red hover:text-white transition-colors text-sm block mt-1">7902322321</a>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-mono text-xs text-gray-500 uppercase tracking-wider mb-3">Faculty Coordinators</h3>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between border-b border-gray-800 pb-2">
+                                <span class="text-gray-300">Ms. Razeena</span>
+                                <span class="text-capital-red">7899466973</span>
+                            </div>
+                            <div class="flex justify-between border-b border-gray-800 pb-2">
+                                <span class="text-gray-300">Ms. Shruthi K</span>
+                                <span class="text-gray-600">Commerce</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Dr. Madhura</span>
+                                <span class="text-gray-600">Management</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="lg:w-2/3 p-6 md:p-16 flex items-center justify-center">
+            <div class="w-full max-w-lg">
+                <span class="font-mono text-capital-red text-xs tracking-widest">ENLISTMENT PROTOCOL</span>
+                <h2 class="font-display text-3xl md:text-5xl text-white mt-2 mb-2">REGISTRATION</h2>
+                
+                <!-- Success Message -->
+                <div id="success-msg" class="success-banner rounded p-4 mb-6 flex items-center gap-3">
+                    <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+                    <div>
+                        <p class="font-mono text-sm font-bold">Registration Successful!</p>
+                        <p class="font-mono text-xs opacity-80">Your team has been recorded.</p>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="error-msg" class="error-banner rounded p-4 mb-6 flex items-center gap-3">
+                    <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+                    <div>
+                        <p class="font-mono text-sm font-bold">Submission Failed</p>
+                        <p class="font-mono text-xs opacity-80">Please try again or contact coordinators.</p>
+                    </div>
+                </div>
+
+                <!-- REGISTRATION STATUS CONTROL -->
+                <div id="registration-closed" class="hidden">
+                    <div class="locked-overlay rounded-lg p-8 md:p-12 text-center relative z-10">
+                        <div class="classified-stamp inline-block px-6 py-3 text-3xl md:text-4xl mb-6">
+                            SUSPENDED
+                        </div>
+                        <h3 class="font-display text-2xl md:text-3xl text-white mb-4">REGISTRATION CLOSED</h3>
+                        <p class="font-mono text-gray-400 text-sm leading-relaxed mb-6">
+                            The enlistment portal is currently sealed by the Temporal Finance Committee. 
+                            Check back later or contact coordinators for offline registration.
+                        </p>
+                        <div class="flex items-center justify-center gap-2 text-capital-red font-mono text-xs">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                            <span>CLEARANCE REQUIRED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration Form (Controlled by JS) -->
+                <form id="registration-form" class="space-y-4 hidden">
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block font-mono text-xs text-gray-500 uppercase tracking-wider mb-2">Team Name *</label>
+                            <input type="text" name="team_name" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="ENTER TEAM DESIGNATION" required>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-mono text-xs text-gray-500 uppercase tracking-wider mb-2">Institution *</label>
+                                <input type="text" name="institution" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="COLLEGE NAME" required>
+                            </div>
+                            <div>
+                                <label class="block font-mono text-xs text-gray-500 uppercase tracking-wider mb-2">Department</label>
+                                <input type="text" name="department" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="DEPT.">
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-800 pt-4">
+                            <h3 class="font-display text-lg text-white mb-3">Participant 01 *</h3>
+                            <div class="space-y-3">
+                                <input type="text" name="p1_name" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="Full Name" required>
+                                <input type="email" name="p1_email" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="Email Address" required>
+                                <input type="tel" name="p1_phone" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="Phone Number" required>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-800 pt-4">
+                            <h3 class="font-display text-lg text-white mb-3">Participant 02 *</h3>
+                            <div class="space-y-3">
+                                <input type="text" name="p2_name" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="Full Name" required>
+                                <input type="email" name="p2_email" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="Email Address" required>
+                                <input type="tel" name="p2_phone" class="input-field w-full p-3 rounded font-mono text-sm" placeholder="Phone Number" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <label class="flex items-start gap-3 cursor-pointer mb-6">
+                            <input type="checkbox" required class="mt-1 w-4 h-4 rounded border-gray-700 text-capital-red focus:ring-capital-red bg-transparent">
+                            <span class="font-mono text-xs text-gray-400 leading-relaxed">
+                                I confirm both participants are from the same institution, carry physical calculators, and accept all rules including surprise rounds. Judges' decisions are final. *
+                            </span>
+                        </label>
+
+                        <button type="submit" id="submit-btn" class="w-full bg-capital-red text-white font-display text-xl tracking-wider py-4 rounded hover:bg-white hover:text-capital-red transition-all duration-300 flex items-center justify-center gap-2">
+                            <span>INITIATE REGISTRATION</span>
+                            <i data-lucide="send" class="w-5 h-5"></i>
+                        </button>
+                        
+                        <div id="loading-btn" class="hidden w-full bg-gray-800 text-white font-mono text-center py-4 rounded">
+                            <span class="animate-pulse">PROCESSING DATA...</span>
+                        </div>
+                        
+                        <p class="text-center font-mono text-xs text-gray-600 mt-4">
+                            Having issues? Contact coordinators directly via phone.
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-nav md:hidden">
+        <a href="rules.html" class="flex flex-col items-center text-gray-400">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">BACK</span>
+        </a>
+        <a href="index.html" class="flex flex-col items-center text-gray-500">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">HOME</span>
+        </a>
+        <a href="#" onclick="window.scrollTo(0,0)" class="flex flex-col items-center text-gray-400">
+            <i data-lucide="chevron-up" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">TOP</span>
+        </a>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // ==========================================
+        // REGISTRATION CONTROL - CHANGE THIS TO OPEN
+        // ==========================================
+        const REGISTRATION_OPEN = true;  // Change to TRUE when ready to accept registrations
+        
+        // Your Google Apps Script URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjrnUPxpnOSslPeW6yjGITXj71_1QMEq5J6rZFRzjoX9ol_tiorxN1ywxhKhM8c_HD7g/exec';
+        
+        // Show/hide based on registration status
+        if (REGISTRATION_OPEN) {
+            document.getElementById('registration-form').classList.remove('hidden');
+            document.getElementById('registration-closed').classList.add('hidden');
+        } else {
+            document.getElementById('registration-form').classList.add('hidden');
+            document.getElementById('registration-closed').classList.remove('hidden');
+        }
+        
+        const form = document.getElementById('registration-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const loadingBtn = document.getElementById('loading-btn');
+        const successMsg = document.getElementById('success-msg');
+        const errorMsg = document.getElementById('error-msg');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            submitBtn.classList.add('hidden');
+            loadingBtn.classList.remove('hidden');
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            const formData = new FormData(form);
+            const urlEncodedData = new URLSearchParams(formData).toString();
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: urlEncodedData
+                });
+                
+                const result = await response.json();
+                
+                if(result.success) {
+                    successMsg.style.display = 'flex';
+                    form.reset();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: urlEncodedData,
+                        mode: 'no-cors'
+                    });
+                    successMsg.style.display = 'flex';
+                    form.reset();
+                } catch (fallbackError) {
+                    errorMsg.style.display = 'flex';
+                }
+            } finally {
+                submitBtn.classList.remove('hidden');
+                loadingBtn.classList.add('hidden');
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

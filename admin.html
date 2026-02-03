@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin | CAPITAL Paradox</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body{
+  background:#050505;
+  color:white;
+  font-family: JetBrains Mono;
+}
+
+.nav{
+  background:#050505;
+  border-bottom:1px solid #DC2626;
+  padding:16px;
+  display:flex;
+  gap:20px;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.nav a{ color:white; text-decoration:none; }
+
+.logout-btn{
+  border:1px solid #DC2626;
+  padding:6px 14px;
+  color:white;
+  font-size:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.logout-btn:hover{
+  background:#DC2626;
+}
+
+.panel{
+  border:1px solid #DC2626;
+  border-radius:16px;
+  padding:24px;
+  margin:40px auto;
+  max-width:95%;
+  background:#050505;
+  overflow-x: auto;
+}
+
+.admin-table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.admin-table th{
+  background:#DC2626;
+  padding:12px 8px;
+  text-align:center;
+  font-size:14px;
+  border:1px solid #DC2626;
+  font-weight:bold;
+}
+
+.admin-table td{
+  padding:8px;
+  text-align:center;
+  border:1px solid #333;
+}
+
+.admin-table td:first-child{
+  background:#1a1a1a;
+  font-weight:bold;
+  text-align:left;
+  padding-left:16px;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+.btn{
+  border:1px solid #DC2626;
+  padding:8px 4px;
+  text-align:center;
+  cursor:pointer;
+  color:white;
+  transition:.3s;
+  font-size:11px;
+  display:block;
+  width:100%;
+}
+
+.btn:hover{
+  background:#DC2626;
+}
+
+.state{
+  font-size:10px;
+  margin-top:4px;
+  color:#ff6666;
+}
+
+.team-input-section{
+  margin-bottom:20px;
+  padding:16px;
+  background:#1a1a1a;
+  border-radius:8px;
+}
+
+.team-input{
+  background:#050505;
+  border:1px solid #DC2626;
+  color:white;
+  padding:8px 12px;
+  font-family: JetBrains Mono;
+  font-size:12px;
+  width:200px;
+  margin-right:8px;
+}
+
+.add-team-btn{
+  background:#DC2626;
+  border:none;
+  color:white;
+  padding:8px 16px;
+  cursor:pointer;
+  font-family: JetBrains Mono;
+  font-size:12px;
+  transition:.3s;
+}
+
+.add-team-btn:hover{
+  background:white;
+  color:#DC2626;
+}
+
+.team-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+
+.team-tag{
+  background:#DC2626;
+  padding:4px 12px;
+  border-radius:4px;
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.remove-team{
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.remove-team:hover{
+  color:#fff;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="nav">
+  <div class="flex gap-6">
+    <a href="index.html">HOME</a>
+    <a href="rounds.html">ROUNDS</a>
+    <a href="rules.html">RULES</a>
+    <a href="contact.html">REGISTER</a>
+  </div>
+
+  <button class="logout-btn" onclick="logout()">LOG OUT</button>
+</nav>
+
+<div class="panel">
+<h2 style="color:#DC2626;font-size:22px;margin-bottom:12px;">
+ADMIN CONTROL PANEL
+</h2>
+
+<p class="text-gray-400 mb-4 text-sm">
+Click each cell to cycle through: REVOKED → ACCESS → PASSED → ELIMINATED
+</p>
+
+<!-- Team Management Section -->
+<div class="team-input-section">
+  <div style="margin-bottom:8px;">
+    <label style="color:#DC2626;font-size:12px;font-weight:bold;">ADD TEAM:</label>
+  </div>
+  <input type="text" id="new-team-input" class="team-input" placeholder="Enter team name (e.g., TEAM_A)" maxlength="20">
+  <button class="add-team-btn" onclick="addTeam()">+ ADD TEAM</button>
+  
+  <div class="team-list" id="team-list"></div>
+</div>
+
+<!-- Admin Grid -->
+<div style="overflow-x:auto;">
+  <table class="admin-table" id="admin-grid">
+    <thead>
+      <tr>
+        <th>TEAM</th>
+        <th>ROUND 1</th>
+        <th>ROUND 2</th>
+        <th>ROUND 3</th>
+        <th>ROUND 4</th>
+      </tr>
+    </thead>
+    <tbody id="grid-body">
+    </tbody>
+  </table>
+</div>
+</div>
+
+<script>
+// ==========================================
+// OBFUSCATION: Same as rounds.html
+// ==========================================
+
+const _rot = (str, shift) => {
+    return str.split('').map(char => {
+        const code = char.charCodeAt(0);
+        return String.fromCharCode(code + shift);
+    }).join('');
+};
+
+const _encode = (str) => btoa(_rot(str, 7));
+const _decode = (str) => _rot(atob(str), -7);
+
+// Encoded storage keys
+const _K2 = "W0xIVGZaW0hbTA==";              // TEAM_STATE
+const _K4 = "SEtUUFVmVFZLTA==";              // ADMIN_MODE
+const _K5 = "W0xIVGZTUFpb";                  // TEAM_LIST
+
+// Data integrity check
+const _hash = (obj) => {
+    const str = JSON.stringify(obj);
+    let h = 0;
+    for(let i = 0; i < str.length; i++) {
+        h = ((h << 5) - h) + str.charCodeAt(i);
+        h = h & h;
+    }
+    return h.toString(36);
+};
+
+const _get = (key) => {
+    try {
+        const raw = localStorage.getItem(key);
+        if(!raw) return null;
+        const parsed = JSON.parse(raw);
+        if(parsed._h !== _hash(parsed.d)) {
+            console.warn('Integrity check failed');
+            return null;
+        }
+        return parsed.d;
+    } catch(e) {
+        return null;
+    }
+};
+
+const _set = (key, value) => {
+    localStorage.setItem(key, JSON.stringify({
+        d: value,
+        _h: _hash(value),
+        _t: Date.now()
+    }));
+};
+
+// ==========================================
+// ADMIN ACCESS CHECK
+// ==========================================
+
+// Verify admin access on page load
+if(_get(_K4) !== "true"){
+    alert("Unauthorized access. Redirecting...");
+    window.location.href = "rounds.html";
+}
+
+const STATES = ["revoked","access","passed","eliminated"];
+
+// Initialize with default teams if none exist
+if(!_get(_K5)){
+    _set(_K5, ["ALPHA", "BETA", "GAMMA"]);
+}
+
+// Initialize team states
+function initializeStates(){
+    const teams = getTeamList();
+    let states = _get(_K2) || {};
+    
+    // Ensure all rounds exist
+    for(let r=1; r<=4; r++){
+        if(!states[r]) states[r] = {};
+        
+        // Ensure all teams exist in each round
+        teams.forEach(team => {
+            if(!states[r][team]) states[r][team] = "revoked";
+        });
+    }
+    
+    _set(_K2, states);
+}
+
+function getTeamList(){
+    return _get(_K5) || ["ALPHA", "BETA", "GAMMA"];
+}
+
+function getState(){
+    return _get(_K2) || {};
+}
+
+function addTeam(){
+    const input = document.getElementById("new-team-input");
+    const teamName = input.value.trim().toUpperCase();
+    
+    if(!teamName){
+        alert("Please enter a team name");
+        return;
+    }
+    
+    if(!/^[A-Z0-9_]+$/.test(teamName)){
+        alert("Team name can only contain letters, numbers, and underscores");
+        return;
+    }
+    
+    const teams = getTeamList();
+    
+    if(teams.includes(teamName)){
+        alert("Team already exists");
+        return;
+    }
+    
+    if(teams.length >= 35){
+        alert("Maximum 35 teams reached");
+        return;
+    }
+    
+    teams.push(teamName);
+    _set(_K5, teams);
+    
+    input.value = "";
+    initializeStates();
+    render();
+}
+
+function removeTeam(teamName){
+    if(!confirm(`Remove team ${teamName}? This will delete all their data.`)){
+        return;
+    }
+    
+    const teams = getTeamList();
+    const index = teams.indexOf(teamName);
+    
+    if(index > -1){
+        teams.splice(index, 1);
+        _set(_K5, teams);
+        
+        // Remove from states
+        const states = getState();
+        for(let r=1; r<=4; r++){
+            delete states[r][teamName];
+        }
+        _set(_K2, states);
+        
+        render();
+    }
+}
+
+function cycle(round, team){
+    let data = getState();
+    let cur = data[round][team] || "revoked";
+    let next = STATES[(STATES.indexOf(cur)+1)%4];
+    data[round][team] = next;
+    _set(_K2, data);
+    render();
+}
+
+function render(){
+    const teams = getTeamList();
+    const data = getState();
+    
+    // Render team list
+    const teamListHTML = teams.map(team => 
+        `<div class="team-tag">
+            ${team}
+            <span class="remove-team" onclick="removeTeam('${team}')">×</span>
+        </div>`
+    ).join('');
+    document.getElementById("team-list").innerHTML = teamListHTML;
+    
+    // Render grid
+    let html = "";
+    
+    teams.forEach(team => {
+        html += `<tr>`;
+        html += `<td>${team}</td>`;
+        
+        for(let r=1; r<=4; r++){
+            const state = data[r][team] || "revoked";
+            html += `
+                <td>
+                    <div onclick="cycle(${r},'${team}')" class="btn">
+                        <div class="state">${state}</div>
+                    </div>
+                </td>
+            `;
+        }
+        
+        html += `</tr>`;
+    });
+    
+    document.getElementById("grid-body").innerHTML = html;
+}
+
+function logout(){
+    _set(_K4, "false");
+    window.location.href = "rounds.html";
+}
+
+// Initialize and render
+initializeStates();
+render();
+</script>
+</body>
+</html>
