@@ -8,6 +8,10 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <script>
@@ -208,7 +212,6 @@ body { background-color: #050505; color: #FAFAFA; }
     <!-- Elimination Screen -->
     <div id="elimination-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[998]" style="display: none;">
         <div class="text-center max-w-2xl mx-4">
-            <!-- Elimination Icon -->
             <div class="mb-8 flex justify-center">
                 <div class="relative">
                     <div class="w-32 h-32 border-4 border-capital-red rounded-full flex items-center justify-center animate-pulse">
@@ -217,7 +220,6 @@ body { background-color: #050505; color: #FAFAFA; }
                 </div>
             </div>
 
-            <!-- Eliminated Text with strikethrough effect -->
             <h1 class="font-display text-5xl md:text-7xl text-capital-red mb-6 relative inline-block">
                 <span class="relative">
                     ELIMINATED
@@ -227,139 +229,62 @@ body { background-color: #050505; color: #FAFAFA; }
                 </span>
             </h1>
 
-            <!-- Message -->
             <div class="space-y-4 mb-8">
                 <p class="text-white text-2xl md:text-3xl font-display">YOUR TEAM HAS BEEN ELIMINATED</p>
                 <p class="text-gray-400 font-mono text-sm">Thank you for participating in CAPITAL Paradox.</p>
                 <p id="elim-round-name" class="text-capital-red font-mono text-lg"></p>
             </div>
 
-            <!-- Return Button -->
             <button onclick="closeEliminationScreen()" class="bg-capital-red text-white font-mono px-8 py-3 hover:bg-white hover:text-capital-red transition-all border border-capital-red">
                 RETURN TO ROUNDS
             </button>
         </div>
     </div>
 
+    <!-- Load Firebase Config -->
+    <script src="firebase-config.js"></script>
+
     <script>
-        // ==========================================
-        // OBFUSCATION: Simpler, more reliable approach
-        // ==========================================
-        
-        // Simple ROT-based encoding (easier to debug, still obscures code)
-        const _rot = (str, shift) => {
-            return str.split('').map(char => {
-                const code = char.charCodeAt(0);
-                return String.fromCharCode(code + shift);
-            }).join('');
-        };
-        
-        const _encode = (str) => btoa(_rot(str, 7));
-        const _decode = (str) => _rot(atob(str), -7);
-        
-        // ==========================================
-        // ENCODED ADMIN CODE
-        // ==========================================
-        
-        // Admin code: FAZILBHAITHEBEST
-        // Encoded with ROT7 + Base64
-        const _ADMIN = "TUhhUFNJT0hQW09MSUxaWw==";
-        
-        // Storage keys (encoded)
-        const _K1 = "amh3cHtoc2Z3aHloa3Z/ZntsaHQ=";  // capital_paradox_team
-        const _K2 = "W0xIVGZaW0hbTA==";              // TEAM_STATE
-        const _K3 = "SkhXUFtIU2ZLTEpZYFdbTEs=";      // CAPITAL_DECRYPTED
-        const _K4 = "SEtUUFVmVFZLTA==";              // ADMIN_MODE
-        const _K5 = "W0xIVGZTUFpb";                  // TEAM_LIST
-        
-        // ==========================================
-        // DATA INTEGRITY CHECK
-        // ==========================================
-        
-        const _hash = (obj) => {
-            const str = JSON.stringify(obj);
-            let h = 0;
-            for(let i = 0; i < str.length; i++) {
-                h = ((h << 5) - h) + str.charCodeAt(i);
-                h = h & h;
-            }
-            return h.toString(36);
-        };
-        
-        // Protected localStorage functions
-        const _get = (key) => {
-            try {
-                const raw = localStorage.getItem(key);
-                if(!raw) return null;
-                const parsed = JSON.parse(raw);
-                if(parsed._h !== _hash(parsed.d)) {
-                    console.warn('Integrity check failed');
-                    return null;
-                }
-                return parsed.d;
-            } catch(e) {
-                return null;
-            }
-        };
-        
-        const _set = (key, value) => {
-            localStorage.setItem(key, JSON.stringify({
-                d: value,
-                _h: _hash(value),
-                _t: Date.now()
-            }));
-        };
-        
-        // ==========================================
-        // INITIALIZE
-        // ==========================================
-        
-        // Initialize default teams if none exist
-        if(!_get(_K5)){
-            _set(_K5, ["ALPHA", "BETA", "GAMMA"]);
-        }
-        
-        if(!_get(_K2)){
-            _set(_K2, {
-                1:{ALPHA:"revoked",BETA:"revoked",GAMMA:"revoked"},
-                2:{ALPHA:"revoked",BETA:"revoked",GAMMA:"revoked"},
-                3:{ALPHA:"revoked",BETA:"revoked",GAMMA:"revoked"},
-                4:{ALPHA:"revoked",BETA:"revoked",GAMMA:"revoked"}
-            });
+        // Session storage key for team login
+        const TEAM_SESSION_KEY = "capital_team_session";
+        const ADMIN_SESSION_KEY = "capital_admin_session";
+        const DECRYPTED_SESSION_KEY = "capital_decrypted";
+
+        // Get team from session
+        function getTeamSession() {
+            return sessionStorage.getItem(TEAM_SESSION_KEY);
         }
 
-        if(!_get(_K3)){
-            _set(_K3, {});
+        function setTeamSession(team) {
+            sessionStorage.setItem(TEAM_SESSION_KEY, team);
         }
 
-        function getState(){
-            return _get(_K2) || {};
+        function clearTeamSession() {
+            sessionStorage.removeItem(TEAM_SESSION_KEY);
         }
 
-        function getDecrypted(){
-            return _get(_K3) || {};
+        // Get decrypted rounds from session
+        function getDecrypted() {
+            const data = sessionStorage.getItem(DECRYPTED_SESSION_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+
+        function setDecrypted(data) {
+            sessionStorage.setItem(DECRYPTED_SESSION_KEY, JSON.stringify(data));
         }
 
         function login(){
             const v = document.getElementById("team-login-input").value.trim().toUpperCase();
 
-            // Decode admin code
-            const adminCode = _decode(_ADMIN);
-            
             // Check if this is admin login
-            if(v === adminCode){
-                // Clear any team data
-                localStorage.removeItem(_K1);
-                // Set admin mode
-                _set(_K4, "true");
-                // Redirect to admin panel immediately
+            if(v === getAdminCode()){
+                sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
                 window.location.replace("admin.html");
-                return; // Stop all further execution
+                return;
             }
 
             // This is a team login
-            _set(_K4, "false");
-            _set(_K1, v);
+            setTeamSession(v);
             render();
         }
 
@@ -421,202 +346,193 @@ body { background-color: #050505; color: #FAFAFA; }
         ];
 
         function render(){
-            // Check if admin mode - don't render team view
-            if(_get(_K4) === "true"){
-                window.location.replace("admin.html");
-                return;
-            }
-
-            const team = _get(_K1);
+            const team = getTeamSession();
 
             if(!team){
-                // Show login screen
                 document.getElementById("team-login-screen").style.display = "flex";
-                // Hide main content
                 document.getElementById("main-content").style.display = "none";
                 document.getElementById("rounds-section").style.display = "none";
                 return;
             }
 
-            // Hide login screen
             document.getElementById("team-login-screen").style.display = "none";
-            // Show main content
             document.getElementById("main-content").style.display = "block";
             document.getElementById("rounds-section").style.display = "block";
             
             document.getElementById("welcome").innerText = `WELCOME, TEAM ${team}`;
 
-            const state = getState();
-            const decrypted = getDecrypted();
-            const container = document.getElementById("rounds-container");
-            container.innerHTML = "";
+            // Fetch data from Firebase
+            database.ref('teamStates').once('value', (snapshot) => {
+                const state = snapshot.val() || {};
+                const decrypted = getDecrypted();
+                const container = document.getElementById("rounds-container");
+                container.innerHTML = "";
 
-            roundsData.forEach(round => {
-                const status = state[round.id][team] || "revoked";
-                const canDecrypt = (status === "access" || status === "passed");
-                const hasDecrypted = decrypted[`${team}_${round.id}`] === true;
+                roundsData.forEach(round => {
+                    const status = (state[round.id] && state[round.id][team]) ? state[round.id][team] : "revoked";
+                    const canDecrypt = (status === "access" || status === "passed");
+                    const hasDecrypted = decrypted[`${team}_${round.id}`] === true;
 
-                if(status === "revoked" && hasDecrypted){
-                    delete decrypted[`${team}_${round.id}`];
-                    _set(_K3, decrypted);
-                }
+                    if(status === "revoked" && hasDecrypted){
+                        delete decrypted[`${team}_${round.id}`];
+                        setDecrypted(decrypted);
+                    }
 
-                const locked = !canDecrypt || !hasDecrypted;
-                const roundNum = String(round.id).padStart(2, '0');
+                    const locked = !canDecrypt || !hasDecrypted;
+                    const roundNum = String(round.id).padStart(2, '0');
 
-                const html = `
-                    <div id="round${round.id}" class="relative scroll-mt-24" data-round-id="${round.id}">
-                        <div class="absolute -left-2 md:-left-12 top-0 font-mono text-[6rem] md:text-[12rem] font-bold ${locked ? 'text-gray-800' : 'text-capital-red/5'} select-none -z-10">
-                            ${roundNum}
-                        </div>
+                    const html = `
+                        <div id="round${round.id}" class="relative scroll-mt-24" data-round-id="${round.id}">
+                            <div class="absolute -left-2 md:-left-12 top-0 font-mono text-[6rem] md:text-[12rem] font-bold ${locked ? 'text-gray-800' : 'text-capital-red/5'} select-none -z-10">
+                                ${roundNum}
+                            </div>
 
-                        <div class="relative z-10 border-l-2 ${locked ? 'border-gray-800' : 'border-capital-red'} pl-6 md:pl-12 py-8 min-h-[400px]">
+                            <div class="relative z-10 border-l-2 ${locked ? 'border-gray-800' : 'border-capital-red'} pl-6 md:pl-12 py-8 min-h-[400px]">
 
-                            ${locked ? `
-                                <div class="locked-overlay absolute inset-0 z-30 flex flex-col items-center justify-center -m-4 md:-m-8 p-4 md:p-8 rounded-lg">
-                                    <div class="classified-stamp px-4 py-2 text-2xl md:text-4xl mb-4 glitch-text text-center">
-                                        CLASSIFIED
-                                    </div>
-
-                                    <div class="w-full max-w-md space-y-4">
-                                        <div class="text-center mb-6">
-                                            <p class="text-gray-400 font-mono text-xs md:text-sm mb-2">ROUND ${round.id} ENCRYPTION</p>
-                                            <div class="flex items-center justify-center gap-2 text-capital-red">
-                                                <i data-lucide="lock" class="w-4 h-4"></i>
-                                                <span class="font-mono text-xs tracking-widest">TEAM CODE REQUIRED</span>
-                                            </div>
+                                ${locked ? `
+                                    <div class="locked-overlay absolute inset-0 z-30 flex flex-col items-center justify-center -m-4 md:-m-8 p-4 md:p-8 rounded-lg">
+                                        <div class="classified-stamp px-4 py-2 text-2xl md:text-4xl mb-4 glitch-text text-center">
+                                            CLASSIFIED
                                         </div>
 
-                                        <input type="text" id="code-${round.id}" class="code-input w-full p-4 font-mono text-lg uppercase tracking-widest rounded" placeholder="ENTER TEAM CODE" autocomplete="off">
-
-                                        <button onclick="attempt(${round.id})" class="unlock-btn w-full py-3 font-display text-lg tracking-wider rounded flex items-center justify-center gap-2 mt-4">
-                                            <span>DECRYPT</span>
-                                            <i data-lucide="unlock" class="w-5 h-5"></i>
-                                        </button>
-
-                                        <div id="msg-${round.id}" class="text-center mt-4"></div>
-                                    </div>
-
-                                    <p class="text-gray-600 font-mono text-xs mt-8 text-center max-w-xs">
-                                        Use your assigned team name (uppercase).
-                                    </p>
-                                </div>
-                            ` : ''}
-
-                            <!-- Unlocked content -->
-                            <div class="${locked ? 'blur-content opacity-30' : ''}">
-                                <div class="flex flex-wrap items-center gap-3 mb-4">
-                                    <i data-lucide="${round.icon}" class="w-5 h-5 md:w-6 md:h-6 text-capital-red"></i>
-                                    <span class="font-mono text-xs text-capital-red tracking-widest uppercase">${round.concept}</span>
-                                    ${!locked ? `<span class="ml-auto font-mono text-xs text-capital-red flex items-center gap-1"><i data-lucide="unlock" class="w-3 h-3"></i> DECRYPTED</span>` : ''}
-                                </div>
-
-                                <h2 class="font-display text-3xl md:text-7xl text-white mb-2 md:mb-4 leading-tight">${round.title}</h2>
-                                <p class="font-script text-xl md:text-2xl text-gray-500 mb-6 md:mb-8">${round.subtitle}</p>
-
-                                <div class="grid md:grid-cols-2 gap-6 md:gap-8">
-                                    <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
-                                        <p>${round.description}</p>
-
-                                        ${round.mechanism ? `
-                                            <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                <p class="text-xs uppercase text-gray-500 mb-2">THE MECHANISM</p>
-                                                <ul class="space-y-2 text-gray-400 text-xs md:text-sm">
-                                                    ${round.mechanism.map(m => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${m}</li>`).join('')}
-                                                </ul>
-                                            </div>
-                                        ` : ''}
-
-                                        ${round.outcomes ? `
-                                            <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                <p class="text-xs uppercase text-gray-500 mb-2">OUTCOME MATRIX</p>
-                                                <div class="space-y-1 text-xs md:text-sm">
-                                                    ${round.outcomes.map(o => `
-                                                        <div class="flex justify-between border-b border-gray-800 pb-1 last:border-0">
-                                                            <span class="text-gray-400 text-xs">${o.label}</span>
-                                                            <span class="${o.color} font-bold text-xs">${o.value}</span>
-                                                        </div>
-                                                    `).join('')}
+                                        <div class="w-full max-w-md space-y-4">
+                                            <div class="text-center mb-6">
+                                                <p class="text-gray-400 font-mono text-xs md:text-sm mb-2">ROUND ${round.id} ENCRYPTION</p>
+                                                <div class="flex items-center justify-center gap-2 text-capital-red">
+                                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                                    <span class="font-mono text-xs tracking-widest">TEAM CODE REQUIRED</span>
                                                 </div>
                                             </div>
-                                        ` : ''}
 
-                                        ${round.twist ? `
-                                            <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                <p class="text-xs uppercase text-gray-500 mb-1">THE TWIST</p>
-                                                <p class="text-gray-300 text-xs md:text-sm">${round.twist}</p>
-                                            </div>
-                                        ` : ''}
+                                            <input type="text" id="code-${round.id}" class="code-input w-full p-4 font-mono text-lg uppercase tracking-widest rounded" placeholder="ENTER TEAM CODE" autocomplete="off">
 
-                                        ${round.enforcement ? `
-                                            <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                <p class="text-xs uppercase text-gray-500 mb-1">ENFORCEMENT</p>
-                                                <p class="text-gray-300 text-xs md:text-sm">${round.enforcement}</p>
-                                            </div>
-                                        ` : ''}
+                                            <button onclick="attempt(${round.id})" class="unlock-btn w-full py-3 font-display text-lg tracking-wider rounded flex items-center justify-center gap-2 mt-4">
+                                                <span>DECRYPT</span>
+                                                <i data-lucide="unlock" class="w-5 h-5"></i>
+                                            </button>
+
+                                            <div id="msg-${round.id}" class="text-center mt-4"></div>
+                                        </div>
+
+                                        <p class="text-gray-600 font-mono text-xs mt-8 text-center max-w-xs">
+                                            Use your assigned team name (uppercase).
+                                        </p>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Unlocked content -->
+                                <div class="${locked ? 'blur-content opacity-30' : ''}">
+                                    <div class="flex flex-wrap items-center gap-3 mb-4">
+                                        <i data-lucide="${round.icon}" class="w-5 h-5 md:w-6 md:h-6 text-capital-red"></i>
+                                        <span class="font-mono text-xs text-capital-red tracking-widest uppercase">${round.concept}</span>
+                                        ${!locked ? `<span class="ml-auto font-mono text-xs text-capital-red flex items-center gap-1"><i data-lucide="unlock" class="w-3 h-3"></i> DECRYPTED</span>` : ''}
                                     </div>
 
-                                    <div class="space-y-3 md:space-y-4">
-                                        ${round.elimination ? `
-                                            <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
-                                                <h4 class="font-display text-lg md:text-xl text-white mb-2">ELIMINATION TRIGGERS</h4>
-                                                <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
-                                                    ${round.elimination.map(e => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${e}</li>`).join('')}
-                                                </ul>
-                                            </div>
-                                        ` : ''}
+                                    <h2 class="font-display text-3xl md:text-7xl text-white mb-2 md:mb-4 leading-tight">${round.title}</h2>
+                                    <p class="font-script text-xl md:text-2xl text-gray-500 mb-6 md:mb-8">${round.subtitle}</p>
 
-                                        ${round.criteria ? `
-                                            <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
-                                                <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">EVALUATION CRITERIA</h4>
-                                                <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
-                                                    ${round.criteria.map(c => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${c}</li>`).join('')}
-                                                </ul>
-                                            </div>
-                                        ` : ''}
+                                    <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                                        <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
+                                            <p>${round.description}</p>
 
-                                        ${round.defense ? `
-                                            <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
-                                                <h4 class="font-display text-lg md:text-xl text-white mb-2">DEFENSE REQUIRED</h4>
-                                                <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
-                                                    ${round.defense.map(d => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${d}</li>`).join('')}
-                                                </ul>
-                                            </div>
-                                        ` : ''}
+                                            ${round.mechanism ? `
+                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                                    <p class="text-xs uppercase text-gray-500 mb-2">THE MECHANISM</p>
+                                                    <ul class="space-y-2 text-gray-400 text-xs md:text-sm">
+                                                        ${round.mechanism.map(m => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${m}</li>`).join('')}
+                                                    </ul>
+                                                </div>
+                                            ` : ''}
 
-                                        ${round.special ? `
-                                            <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
-                                                <h4 class="font-display text-lg md:text-xl text-white mb-1">${round.special.split(':')[0]}</h4>
-                                                <p class="font-mono text-xs text-gray-400 mb-2">${round.special.split(':').slice(1).join(':')}</p>
-                                                ${round.quote ? `<p class="text-xs text-capital-red italic font-mono border-t border-capital-red/20 pt-2">${round.quote}</p>` : ''}
-                                            </div>
-                                        ` : ''}
+                                            ${round.outcomes ? `
+                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                                    <p class="text-xs uppercase text-gray-500 mb-2">OUTCOME MATRIX</p>
+                                                    <div class="space-y-1 text-xs md:text-sm">
+                                                        ${round.outcomes.map(o => `
+                                                            <div class="flex justify-between border-b border-gray-800 pb-1 last:border-0">
+                                                                <span class="text-gray-400 text-xs">${o.label}</span>
+                                                                <span class="${o.color} font-bold text-xs">${o.value}</span>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
 
-                                        ${round.skills ? `
-                                            <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
-                                                <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">SKILLS TESTED</h4>
-                                                <p class="font-mono text-xs md:text-sm text-gray-400">${round.skills}</p>
-                                            </div>
-                                        ` : ''}
+                                            ${round.twist ? `
+                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                                    <p class="text-xs uppercase text-gray-500 mb-1">THE TWIST</p>
+                                                    <p class="text-gray-300 text-xs md:text-sm">${round.twist}</p>
+                                                </div>
+                                            ` : ''}
+
+                                            ${round.enforcement ? `
+                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                                    <p class="text-xs uppercase text-gray-500 mb-1">ENFORCEMENT</p>
+                                                    <p class="text-gray-300 text-xs md:text-sm">${round.enforcement}</p>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+
+                                        <div class="space-y-3 md:space-y-4">
+                                            ${round.elimination ? `
+                                                <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                                    <h4 class="font-display text-lg md:text-xl text-white mb-2">ELIMINATION TRIGGERS</h4>
+                                                    <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
+                                                        ${round.elimination.map(e => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${e}</li>`).join('')}
+                                                    </ul>
+                                                </div>
+                                            ` : ''}
+
+                                            ${round.criteria ? `
+                                                <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
+                                                    <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">EVALUATION CRITERIA</h4>
+                                                    <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
+                                                        ${round.criteria.map(c => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${c}</li>`).join('')}
+                                                    </ul>
+                                                </div>
+                                            ` : ''}
+
+                                            ${round.defense ? `
+                                                <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
+                                                    <h4 class="font-display text-lg md:text-xl text-white mb-2">DEFENSE REQUIRED</h4>
+                                                    <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
+                                                        ${round.defense.map(d => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${d}</li>`).join('')}
+                                                    </ul>
+                                                </div>
+                                            ` : ''}
+
+                                            ${round.special ? `
+                                                <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                                    <h4 class="font-display text-lg md:text-xl text-white mb-1">${round.special.split(':')[0]}</h4>
+                                                    <p class="font-mono text-xs text-gray-400 mb-2">${round.special.split(':').slice(1).join(':')}</p>
+                                                    ${round.quote ? `<p class="text-xs text-capital-red italic font-mono border-t border-capital-red/20 pt-2">${round.quote}</p>` : ''}
+                                                </div>
+                                            ` : ''}
+
+                                            ${round.skills ? `
+                                                <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
+                                                    <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">SKILLS TESTED</h4>
+                                                    <p class="font-mono text-xs md:text-sm text-gray-400">${round.skills}</p>
+                                                </div>
+                                            ` : ''}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
-                container.innerHTML += html;
+                    container.innerHTML += html;
+                });
+
+                lucide.createIcons();
             });
-
-            lucide.createIcons();
         }
 
         function attempt(id){
-            const team = _get(_K1);
+            const team = getTeamSession();
             if(!team) return;
 
-            const state = getState();
-            const decrypted = getDecrypted();
             const msg = document.getElementById("msg-"+id);
             const entered = document.getElementById("code-"+id).value.trim().toUpperCase();
 
@@ -628,27 +544,31 @@ body { background-color: #050505; color: #FAFAFA; }
                 return;
             }
 
-            const s = state[id][team] || "revoked";
+            // Fetch current status from Firebase
+            database.ref(`teamStates/${id}/${team}`).once('value', (snapshot) => {
+                const s = snapshot.val() || "revoked";
 
-            if(s === "revoked"){
-                msg.innerHTML = `<p class="text-red-500 font-mono text-xs mt-2 shake"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>ACCESS NOT GRANTED BY ADMIN</p>`;
+                if(s === "revoked"){
+                    msg.innerHTML = `<p class="text-red-500 font-mono text-xs mt-2 shake"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>ACCESS NOT GRANTED BY ADMIN</p>`;
+                    lucide.createIcons();
+                    return;
+                }
+
+                if(s === "eliminated"){
+                    showEliminationScreen(id);
+                    return;
+                }
+
+                // Access granted - save to session
+                const decrypted = getDecrypted();
+                decrypted[`${team}_${id}`] = true;
+                setDecrypted(decrypted);
+
+                msg.innerHTML = `<p class="text-green-500 font-mono text-xs mt-2"><i data-lucide="check-circle" class="w-3 h-3 inline mr-1"></i>DECRYPTION SUCCESSFUL</p>`;
                 lucide.createIcons();
-                return;
-            }
 
-            if(s === "eliminated"){
-                // Show full elimination screen
-                showEliminationScreen(id);
-                return;
-            }
-
-            decrypted[`${team}_${id}`] = true;
-            _set(_K3, decrypted);
-
-            msg.innerHTML = `<p class="text-green-500 font-mono text-xs mt-2"><i data-lucide="check-circle" class="w-3 h-3 inline mr-1"></i>DECRYPTION SUCCESSFUL</p>`;
-            lucide.createIcons();
-
-            setTimeout(() => render(), 1500);
+                setTimeout(() => render(), 1500);
+            });
         }
 
         function showEliminationScreen(roundId){
@@ -671,7 +591,7 @@ body { background-color: #050505; color: #FAFAFA; }
         window.addEventListener("load", () => {
             const nav = performance.getEntriesByType("navigation")[0];
             if(nav && nav.type === "reload"){
-                localStorage.removeItem(_K1);
+                clearTeamSession();
             }
             render();
         });
