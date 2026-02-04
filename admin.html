@@ -5,6 +5,10 @@
 <title>Admin | CAPITAL Paradox</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
 <style>
 body{
   background:#050505;
@@ -159,6 +163,12 @@ body{
 .remove-team:hover{
   color:#fff;
 }
+
+.loading{
+  text-align:center;
+  padding:40px;
+  color:#DC2626;
+}
 </style>
 </head>
 
@@ -184,131 +194,118 @@ ADMIN CONTROL PANEL
 Click each cell to cycle through: REVOKED → ACCESS → PASSED → ELIMINATED
 </p>
 
-<!-- Team Management Section -->
-<div class="team-input-section">
-  <div style="margin-bottom:8px;">
-    <label style="color:#DC2626;font-size:12px;font-weight:bold;">ADD TEAM:</label>
-  </div>
-  <input type="text" id="new-team-input" class="team-input" placeholder="Enter team name (e.g., TEAM_A)" maxlength="20">
-  <button class="add-team-btn" onclick="addTeam()">+ ADD TEAM</button>
-  
-  <div class="team-list" id="team-list"></div>
+<div id="loading" class="loading">
+  <p>Loading Firebase data...</p>
 </div>
 
-<!-- Admin Grid -->
-<div style="overflow-x:auto;">
-  <table class="admin-table" id="admin-grid">
-    <thead>
-      <tr>
-        <th>TEAM</th>
-        <th>ROUND 1</th>
-        <th>ROUND 2</th>
-        <th>ROUND 3</th>
-        <th>ROUND 4</th>
-      </tr>
-    </thead>
-    <tbody id="grid-body">
-    </tbody>
-  </table>
+<div id="admin-content" style="display:none;">
+  <!-- Team Management Section -->
+  <div class="team-input-section">
+    <div style="margin-bottom:8px;">
+      <label style="color:#DC2626;font-size:12px;font-weight:bold;">ADD TEAM:</label>
+    </div>
+    <input type="text" id="new-team-input" class="team-input" placeholder="Enter team name (e.g., TEAM_A)" maxlength="20">
+    <button class="add-team-btn" onclick="addTeam()">+ ADD TEAM</button>
+    
+    <div class="team-list" id="team-list"></div>
+  </div>
+
+  <!-- Admin Grid -->
+  <div style="overflow-x:auto;">
+    <table class="admin-table" id="admin-grid">
+      <thead>
+        <tr>
+          <th>TEAM</th>
+          <th>ROUND 1</th>
+          <th>ROUND 2</th>
+          <th>ROUND 3</th>
+          <th>ROUND 4</th>
+        </tr>
+      </thead>
+      <tbody id="grid-body">
+      </tbody>
+    </table>
+  </div>
 </div>
 </div>
+
+<!-- Load Firebase Config -->
+<script src="firebase-config.js"></script>
 
 <script>
-// ==========================================
-// OBFUSCATION: Same as rounds.html
-// ==========================================
-
-const _rot = (str, shift) => {
-    return str.split('').map(char => {
-        const code = char.charCodeAt(0);
-        return String.fromCharCode(code + shift);
-    }).join('');
-};
-
-const _encode = (str) => btoa(_rot(str, 7));
-const _decode = (str) => _rot(atob(str), -7);
-
-// Encoded storage keys
-const _K2 = "W0xIVGZaW0hbTA==";              // TEAM_STATE
-const _K4 = "SEtUUFVmVFZLTA==";              // ADMIN_MODE
-const _K5 = "W0xIVGZTUFpb";                  // TEAM_LIST
-
-// Data integrity check
-const _hash = (obj) => {
-    const str = JSON.stringify(obj);
-    let h = 0;
-    for(let i = 0; i < str.length; i++) {
-        h = ((h << 5) - h) + str.charCodeAt(i);
-        h = h & h;
-    }
-    return h.toString(36);
-};
-
-const _get = (key) => {
-    try {
-        const raw = localStorage.getItem(key);
-        if(!raw) return null;
-        const parsed = JSON.parse(raw);
-        if(parsed._h !== _hash(parsed.d)) {
-            console.warn('Integrity check failed');
-            return null;
-        }
-        return parsed.d;
-    } catch(e) {
-        return null;
-    }
-};
-
-const _set = (key, value) => {
-    localStorage.setItem(key, JSON.stringify({
-        d: value,
-        _h: _hash(value),
-        _t: Date.now()
-    }));
-};
-
 // ==========================================
 // ADMIN ACCESS CHECK
 // ==========================================
 
-// Verify admin access on page load
-if(_get(_K4) !== "true"){
+const ADMIN_SESSION_KEY = "capital_admin_session";
+
+// Check if admin is logged in
+if(sessionStorage.getItem(ADMIN_SESSION_KEY) !== "true"){
     alert("Unauthorized access. Redirecting...");
     window.location.href = "rounds.html";
 }
 
 const STATES = ["revoked","access","passed","eliminated"];
 
-// Initialize with default teams if none exist
-if(!_get(_K5)){
-    _set(_K5, ["ALPHA", "BETA", "GAMMA"]);
+// ==========================================
+// FIREBASE DATABASE FUNCTIONS
+// ==========================================
+
+function getTeamList(callback){
+    database.ref('teamList').once('value', (snapshot) => {
+        const teams = snapshot.val() || ["ALPHA", "BETA", "GAMMA"];
+        callback(teams);
+    });
 }
 
-// Initialize team states
+function setTeamList(teams){
+    database.ref('teamList').set(teams);
+}
+
+function getTeamStates(callback){
+    database.ref('teamStates').once('value', (snapshot) => {
+        const states = snapshot.val() || {};
+        callback(states);
+    });
+}
+
+function setTeamState(round, team, state){
+    database.ref(`teamStates/${round}/${team}`).set(state);
+}
+
 function initializeStates(){
-    const teams = getTeamList();
-    let states = _get(_K2) || {};
-    
-    // Ensure all rounds exist
-    for(let r=1; r<=4; r++){
-        if(!states[r]) states[r] = {};
-        
-        // Ensure all teams exist in each round
-        teams.forEach(team => {
-            if(!states[r][team]) states[r][team] = "revoked";
+    getTeamList((teams) => {
+        getTeamStates((states) => {
+            let updated = false;
+            
+            // Ensure all rounds exist
+            for(let r=1; r<=4; r++){
+                if(!states[r]) {
+                    states[r] = {};
+                    updated = true;
+                }
+                
+                // Ensure all teams exist in each round
+                teams.forEach(team => {
+                    if(!states[r][team]) {
+                        states[r][team] = "revoked";
+                        updated = true;
+                    }
+                });
+            }
+            
+            if(updated){
+                database.ref('teamStates').set(states);
+            }
+            
+            render();
         });
-    }
-    
-    _set(_K2, states);
+    });
 }
 
-function getTeamList(){
-    return _get(_K5) || ["ALPHA", "BETA", "GAMMA"];
-}
-
-function getState(){
-    return _get(_K2) || {};
-}
+// ==========================================
+// TEAM MANAGEMENT
+// ==========================================
 
 function addTeam(){
     const input = document.getElementById("new-team-input");
@@ -324,24 +321,28 @@ function addTeam(){
         return;
     }
     
-    const teams = getTeamList();
-    
-    if(teams.includes(teamName)){
-        alert("Team already exists");
-        return;
-    }
-    
-    if(teams.length >= 35){
-        alert("Maximum 35 teams reached");
-        return;
-    }
-    
-    teams.push(teamName);
-    _set(_K5, teams);
-    
-    input.value = "";
-    initializeStates();
-    render();
+    getTeamList((teams) => {
+        if(teams.includes(teamName)){
+            alert("Team already exists");
+            return;
+        }
+        
+        if(teams.length >= 35){
+            alert("Maximum 35 teams reached");
+            return;
+        }
+        
+        teams.push(teamName);
+        setTeamList(teams);
+        
+        // Initialize states for new team
+        for(let r=1; r<=4; r++){
+            setTeamState(r, teamName, "revoked");
+        }
+        
+        input.value = "";
+        render();
+    });
 }
 
 function removeTeam(teamName){
@@ -349,78 +350,98 @@ function removeTeam(teamName){
         return;
     }
     
-    const teams = getTeamList();
-    const index = teams.indexOf(teamName);
-    
-    if(index > -1){
-        teams.splice(index, 1);
-        _set(_K5, teams);
+    getTeamList((teams) => {
+        const index = teams.indexOf(teamName);
         
-        // Remove from states
-        const states = getState();
-        for(let r=1; r<=4; r++){
-            delete states[r][teamName];
+        if(index > -1){
+            teams.splice(index, 1);
+            setTeamList(teams);
+            
+            // Remove from states
+            for(let r=1; r<=4; r++){
+                database.ref(`teamStates/${r}/${teamName}`).remove();
+            }
+            
+            render();
         }
-        _set(_K2, states);
-        
-        render();
-    }
+    });
 }
+
+// ==========================================
+// STATE MANAGEMENT
+// ==========================================
 
 function cycle(round, team){
-    let data = getState();
-    let cur = data[round][team] || "revoked";
-    let next = STATES[(STATES.indexOf(cur)+1)%4];
-    data[round][team] = next;
-    _set(_K2, data);
-    render();
+    getTeamStates((states) => {
+        const cur = states[round][team] || "revoked";
+        const next = STATES[(STATES.indexOf(cur)+1)%4];
+        setTeamState(round, team, next);
+        render();
+    });
 }
 
+// ==========================================
+// RENDER
+// ==========================================
+
 function render(){
-    const teams = getTeamList();
-    const data = getState();
-    
-    // Render team list
-    const teamListHTML = teams.map(team => 
-        `<div class="team-tag">
-            ${team}
-            <span class="remove-team" onclick="removeTeam('${team}')">×</span>
-        </div>`
-    ).join('');
-    document.getElementById("team-list").innerHTML = teamListHTML;
-    
-    // Render grid
-    let html = "";
-    
-    teams.forEach(team => {
-        html += `<tr>`;
-        html += `<td>${team}</td>`;
-        
-        for(let r=1; r<=4; r++){
-            const state = data[r][team] || "revoked";
-            html += `
-                <td>
-                    <div onclick="cycle(${r},'${team}')" class="btn">
-                        <div class="state">${state}</div>
-                    </div>
-                </td>
-            `;
-        }
-        
-        html += `</tr>`;
+    getTeamList((teams) => {
+        getTeamStates((states) => {
+            // Hide loading, show content
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("admin-content").style.display = "block";
+            
+            // Render team list
+            const teamListHTML = teams.map(team => 
+                `<div class="team-tag">
+                    ${team}
+                    <span class="remove-team" onclick="removeTeam('${team}')">×</span>
+                </div>`
+            ).join('');
+            document.getElementById("team-list").innerHTML = teamListHTML;
+            
+            // Render grid
+            let html = "";
+            
+            teams.forEach(team => {
+                html += `<tr>`;
+                html += `<td>${team}</td>`;
+                
+                for(let r=1; r<=4; r++){
+                    const state = states[r][team] || "revoked";
+                    html += `
+                        <td>
+                            <div onclick="cycle(${r},'${team}')" class="btn">
+                                <div class="state">${state}</div>
+                            </div>
+                        </td>
+                    `;
+                }
+                
+                html += `</tr>`;
+            });
+            
+            document.getElementById("grid-body").innerHTML = html;
+        });
     });
-    
-    document.getElementById("grid-body").innerHTML = html;
 }
 
 function logout(){
-    _set(_K4, "false");
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
     window.location.href = "rounds.html";
 }
 
-// Initialize and render
-initializeStates();
-render();
+// ==========================================
+// INITIALIZE
+// ==========================================
+
+// Initialize default teams if none exist
+getTeamList((teams) => {
+    if(teams.length === 0 || !teams){
+        setTeamList(["ALPHA", "BETA", "GAMMA"]);
+    }
+    initializeStates();
+});
 </script>
 </body>
 </html>
