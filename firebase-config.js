@@ -10,16 +10,16 @@
 // 5. Replace the values below with YOUR values
 //
 // ==========================================
-
 const firebaseConfig = {
-  apiKey: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567",
-  authDomain: "capital-paradox-12345.firebaseapp.com",
-  databaseURL: "https://capital-paradox-12345.firebaseio.com",
-  projectId: "capital-paradox-12345",
-  storageBucket: "capital-paradox-12345.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abc123def456ghi789"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "capital-paradox.firebaseapp.com",
+  databaseURL: "https://capital-paradox-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "capital-paradox",
+  storageBucket: "capital-paradox.appspot.com",
+  messagingSenderId: "YOUR_NUMBER",
+  appId: "YOUR_APP_ID"
 };
+
 
 // ==========================================
 // EXAMPLE (DO NOT USE - Replace with yours):
@@ -54,3 +54,4 @@ const _decode = (str) => _rot(atob(str), -7);
 function getAdminCode() {
     return _decode(_ADMIN_CODE);
 }
+
