@@ -113,6 +113,22 @@ body { background-color: #050505; color: #FAFAFA; }
 .glitch-text {
     animation: glitch 2s infinite;
 }
+.read-more-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out;
+}
+.read-more-content.expanded {
+    max-height: 3000px;
+    transition: max-height 0.7s ease-in;
+}
+.read-more-btn {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.read-more-btn:hover {
+    transform: translateX(4px);
+}
 @media (max-width: 768px) {
     .mobile-nav {
         position: fixed;
@@ -291,22 +307,35 @@ body { background-color: #050505; color: #FAFAFA; }
         const roundsData = [
             {
                 id: 1,
-                title: "THE AUCTION OF CONSEQUENCES",
-                subtitle: "Survival of the fastest. Greed is good. Until it isn't.",
-                concept: "HIGH-FREQUENCY MARKET CHAOS",
+                title: "WOLVES OF WALL STREET",
+                subtitle: "Strategic Valuation and Hidden Costs",
+                concept: "THE CAPITAL PARADOX AUCTION",
                 icon: "trending-up",
-                description: "Teams enter a high-pressure trading floor simulation where market volatility is extreme and windows of opportunity last seconds. Assets fluctuate in real-time based on randomized market shocks.",
-                mechanism: [
-                    "Rapid-fire trading intervals (30-second decision windows)",
-                    "Leveraged positions allowed (and encouraged)",
-                    "Market crashes triggered without warning"
-                ],
-                elimination: [
-                    "Portfolio liquidation (bankruptcy)",
-                    "Failure to meet minimum trade thresholds",
-                    "Margin call defaults"
-                ],
-                skills: "Risk tolerance • Quick calculation • Market timing • Psychological resilience"
+                description: "This is a competitive auction testing your ability to assess value and manage resources under pressure. Every decision carries immediate costs and potential future consequences.",
+                overview: {
+                    teamsCapital: [
+                        "Each team consists of two members.",
+                        "Starting capital: ₹100,000 per team.",
+                        "This is your sole resource for the entire round."
+                    ],
+                    availableAssets: "Various strategic assets will be available for purchase through the auction, each with assigned values and potential applications. Some assets may carry hidden consequences that will only be revealed in subsequent rounds.",
+                    warning: "Not all items are equal. Strategic value may differ significantly from face value."
+                },
+                strategicChoice: {
+                    title: "The Strategic Choice",
+                    points: [
+                        "Bidding is optional. Choosing not to bid is also a strategy — and may be as powerful as winning.",
+                        "There is no \"safe option.\"",
+                        "Each team must buy at least 2 items."
+                    ]
+                },
+                finalWarning: {
+                    lines: [
+                        "This is not a typical college auction.",
+                        "This is a simulation of real power, risk, and consequence.",
+                        "Bid boldly — but think brutally."
+                    ]
+                }
             },
             {
                 id: 2,
@@ -345,6 +374,23 @@ body { background-color: #050505; color: #FAFAFA; }
             }
         ];
 
+        function toggleReadMore(roundId) {
+            const content = document.getElementById(`read-more-${roundId}`);
+            const btn = document.getElementById(`read-more-btn-${roundId}`);
+            const icon = document.getElementById(`read-more-icon-${roundId}`);
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                btn.innerHTML = '<span>READ MORE</span>';
+                icon.setAttribute('data-lucide', 'chevron-down');
+            } else {
+                content.classList.add('expanded');
+                btn.innerHTML = '<span>READ LESS</span>';
+                icon.setAttribute('data-lucide', 'chevron-up');
+            }
+            lucide.createIcons();
+        }
+
         function render(){
             const team = getTeamSession();
 
@@ -380,6 +426,147 @@ body { background-color: #050505; color: #FAFAFA; }
 
                     const locked = !canDecrypt || !hasDecrypted;
                     const roundNum = String(round.id).padStart(2, '0');
+
+                    let contentHtml = '';
+
+                    // Round 1 - Wolves of Wall Street
+                    if(round.id === 1) {
+                        contentHtml = `
+                            <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
+                                <p>${round.description}</p>
+
+                                <!-- Teams & Capital -->
+                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                    <p class="text-xs uppercase text-gray-500 mb-2">TEAMS & CAPITAL</p>
+                                    <ul class="space-y-2 text-gray-400 text-xs md:text-sm">
+                                        ${round.overview.teamsCapital.map(t => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${t}</li>`).join('')}
+                                    </ul>
+                                </div>
+
+                                <!-- Available Assets -->
+                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                    <p class="text-xs uppercase text-gray-500 mb-2">AVAILABLE ASSETS</p>
+                                    <p class="text-gray-300 text-xs md:text-sm mb-2">${round.overview.availableAssets}</p>
+                                    <p class="text-capital-red text-xs md:text-sm font-bold mt-2">${round.overview.warning}</p>
+                                </div>
+
+                                <!-- Read More Button -->
+                                <button onclick="toggleReadMore(${round.id})" class="read-more-btn flex items-center gap-2 text-capital-red font-mono text-xs hover:text-white transition-colors mt-4">
+                                    <span id="read-more-btn-${round.id}">READ MORE</span>
+                                    <i id="read-more-icon-${round.id}" data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+
+                                <!-- Expandable Content -->
+                                <div id="read-more-${round.id}" class="read-more-content space-y-4">
+                                    <!-- Strategic Choice -->
+                                    <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
+                                        <h4 class="font-display text-lg md:text-xl text-white mb-3">${round.strategicChoice.title}</h4>
+                                        <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-2">
+                                            ${round.strategicChoice.points.map(p => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${p}</li>`).join('')}
+                                        </ul>
+                                    </div>
+
+                                    <!-- Final Warning -->
+                                    <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                        <h4 class="font-display text-lg md:text-xl text-capital-red mb-3">FINAL WARNING</h4>
+                                        <div class="space-y-2">
+                                            ${round.finalWarning.lines.map(line => `<p class="font-mono text-xs md:text-sm text-gray-300">${line}</p>`).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Other rounds content
+                        contentHtml = `
+                            <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                                <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
+                                    <p>${round.description}</p>
+
+                                    ${round.mechanism ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-2">THE MECHANISM</p>
+                                            <ul class="space-y-2 text-gray-400 text-xs md:text-sm">
+                                                ${round.mechanism.map(m => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${m}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.outcomes ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-2">OUTCOME MATRIX</p>
+                                            <div class="space-y-1 text-xs md:text-sm">
+                                                ${round.outcomes.map(o => `
+                                                    <div class="flex justify-between border-b border-gray-800 pb-1 last:border-0">
+                                                        <span class="text-gray-400 text-xs">${o.label}</span>
+                                                        <span class="${o.color} font-bold text-xs">${o.value}</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.twist ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-1">THE TWIST</p>
+                                            <p class="text-gray-300 text-xs md:text-sm">${round.twist}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.enforcement ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-1">ENFORCEMENT</p>
+                                            <p class="text-gray-300 text-xs md:text-sm">${round.enforcement}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div class="space-y-3 md:space-y-4">
+                                    ${round.elimination ? `
+                                        <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                            <h4 class="font-display text-lg md:text-xl text-white mb-2">ELIMINATION TRIGGERS</h4>
+                                            <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
+                                                ${round.elimination.map(e => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${e}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.criteria ? `
+                                        <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
+                                            <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">EVALUATION CRITERIA</h4>
+                                            <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
+                                                ${round.criteria.map(c => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${c}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.defense ? `
+                                        <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
+                                            <h4 class="font-display text-lg md:text-xl text-white mb-2">DEFENSE REQUIRED</h4>
+                                            <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
+                                                ${round.defense.map(d => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${d}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.special ? `
+                                        <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                            <h4 class="font-display text-lg md:text-xl text-white mb-1">${round.special.split(':')[0]}</h4>
+                                            <p class="font-mono text-xs text-gray-400 mb-2">${round.special.split(':').slice(1).join(':')}</p>
+                                            ${round.quote ? `<p class="text-xs text-capital-red italic font-mono border-t border-capital-red/20 pt-2">${round.quote}</p>` : ''}
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.skills ? `
+                                        <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
+                                            <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">SKILLS TESTED</h4>
+                                            <p class="font-mono text-xs md:text-sm text-gray-400">${round.skills}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
 
                     const html = `
                         <div id="round${round.id}" class="relative scroll-mt-24" data-round-id="${round.id}">
@@ -431,92 +618,7 @@ body { background-color: #050505; color: #FAFAFA; }
                                     <h2 class="font-display text-3xl md:text-7xl text-white mb-2 md:mb-4 leading-tight">${round.title}</h2>
                                     <p class="font-script text-xl md:text-2xl text-gray-500 mb-6 md:mb-8">${round.subtitle}</p>
 
-                                    <div class="grid md:grid-cols-2 gap-6 md:gap-8">
-                                        <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
-                                            <p>${round.description}</p>
-
-                                            ${round.mechanism ? `
-                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                    <p class="text-xs uppercase text-gray-500 mb-2">THE MECHANISM</p>
-                                                    <ul class="space-y-2 text-gray-400 text-xs md:text-sm">
-                                                        ${round.mechanism.map(m => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${m}</li>`).join('')}
-                                                    </ul>
-                                                </div>
-                                            ` : ''}
-
-                                            ${round.outcomes ? `
-                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                    <p class="text-xs uppercase text-gray-500 mb-2">OUTCOME MATRIX</p>
-                                                    <div class="space-y-1 text-xs md:text-sm">
-                                                        ${round.outcomes.map(o => `
-                                                            <div class="flex justify-between border-b border-gray-800 pb-1 last:border-0">
-                                                                <span class="text-gray-400 text-xs">${o.label}</span>
-                                                                <span class="${o.color} font-bold text-xs">${o.value}</span>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            ` : ''}
-
-                                            ${round.twist ? `
-                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                    <p class="text-xs uppercase text-gray-500 mb-1">THE TWIST</p>
-                                                    <p class="text-gray-300 text-xs md:text-sm">${round.twist}</p>
-                                                </div>
-                                            ` : ''}
-
-                                            ${round.enforcement ? `
-                                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                                    <p class="text-xs uppercase text-gray-500 mb-1">ENFORCEMENT</p>
-                                                    <p class="text-gray-300 text-xs md:text-sm">${round.enforcement}</p>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-
-                                        <div class="space-y-3 md:space-y-4">
-                                            ${round.elimination ? `
-                                                <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
-                                                    <h4 class="font-display text-lg md:text-xl text-white mb-2">ELIMINATION TRIGGERS</h4>
-                                                    <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
-                                                        ${round.elimination.map(e => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${e}</li>`).join('')}
-                                                    </ul>
-                                                </div>
-                                            ` : ''}
-
-                                            ${round.criteria ? `
-                                                <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
-                                                    <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">EVALUATION CRITERIA</h4>
-                                                    <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
-                                                        ${round.criteria.map(c => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${c}</li>`).join('')}
-                                                    </ul>
-                                                </div>
-                                            ` : ''}
-
-                                            ${round.defense ? `
-                                                <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
-                                                    <h4 class="font-display text-lg md:text-xl text-white mb-2">DEFENSE REQUIRED</h4>
-                                                    <ul class="font-mono text-xs md:text-sm text-gray-400 space-y-1">
-                                                        ${round.defense.map(d => `<li class="flex gap-2"><span class="text-capital-red">›</span> ${d}</li>`).join('')}
-                                                    </ul>
-                                                </div>
-                                            ` : ''}
-
-                                            ${round.special ? `
-                                                <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
-                                                    <h4 class="font-display text-lg md:text-xl text-white mb-1">${round.special.split(':')[0]}</h4>
-                                                    <p class="font-mono text-xs text-gray-400 mb-2">${round.special.split(':').slice(1).join(':')}</p>
-                                                    ${round.quote ? `<p class="text-xs text-capital-red italic font-mono border-t border-capital-red/20 pt-2">${round.quote}</p>` : ''}
-                                                </div>
-                                            ` : ''}
-
-                                            ${round.skills ? `
-                                                <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
-                                                    <h4 class="font-display text-lg md:text-xl text-capital-red mb-2">SKILLS TESTED</h4>
-                                                    <p class="font-mono text-xs md:text-sm text-gray-400">${round.skills}</p>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                    </div>
+                                    ${contentHtml}
                                 </div>
                             </div>
                         </div>
@@ -573,7 +675,7 @@ body { background-color: #050505; color: #FAFAFA; }
 
         function showEliminationScreen(roundId){
             const roundNames = {
-                1: "Round 1 — THE AUCTION OF CONSEQUENCES",
+                1: "Round 1 — WOLVES OF WALL STREET",
                 2: "Round 2 — DIVIDED LOYALTIES",
                 3: "Round 3 — THE BARTER TRADE",
                 4: "Round 4 — THE INSIDER'S DILEMMA"
