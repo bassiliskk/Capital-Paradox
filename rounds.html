@@ -257,6 +257,34 @@ body { background-color: #050505; color: #FAFAFA; }
         </div>
     </div>
 
+    <!-- Passed/Congratulations Screen -->
+    <div id="passed-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[998]" style="display: none;">
+        <div class="text-center max-w-2xl mx-4">
+            <div class="mb-8 flex justify-center">
+                <div class="relative">
+                    <div class="w-32 h-32 border-4 border-green-500 rounded-full flex items-center justify-center animate-pulse">
+                        <i data-lucide="check" class="w-20 h-20 text-green-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <h1 class="font-display text-5xl md:text-7xl text-green-500 mb-6 relative inline-block">
+                <span class="relative">
+                    PASSED
+                </span>
+            </h1>
+
+            <div class="space-y-4 mb-8">
+                <p class="text-white text-2xl md:text-3xl font-display">CONGRATULATIONS!</p>
+                <p id="passed-message" class="text-green-500 font-mono text-lg"></p>
+            </div>
+
+            <button onclick="continueToRound()" class="bg-green-500 text-white font-mono px-8 py-3 hover:bg-white hover:text-green-500 transition-all border border-green-500">
+                CONTINUE TO THE ROUND
+            </button>
+        </div>
+    </div>
+
     <!-- Load Firebase Config -->
     <script src="firebase-config.js"></script>
 
@@ -265,6 +293,9 @@ body { background-color: #050505; color: #FAFAFA; }
         const TEAM_SESSION_KEY = "capital_team_session";
         const ADMIN_SESSION_KEY = "capital_admin_session";
         const DECRYPTED_SESSION_KEY = "capital_decrypted";
+
+        // Store current round ID for passed screen
+        let currentPassedRoundId = null;
 
         // Get team from session
         function getTeamSession() {
@@ -661,7 +692,14 @@ body { background-color: #050505; color: #FAFAFA; }
                     return;
                 }
 
-                // Access granted - save to session
+                if(s === "passed"){
+                    // Show congratulations screen
+                    currentPassedRoundId = id;
+                    showPassedScreen(id);
+                    return;
+                }
+
+                // Access granted (status is "access")
                 const decrypted = getDecrypted();
                 decrypted[`${team}_${id}`] = true;
                 setDecrypted(decrypted);
@@ -688,6 +726,46 @@ body { background-color: #050505; color: #FAFAFA; }
 
         function closeEliminationScreen(){
             document.getElementById("elimination-screen").style.display = "none";
+        }
+
+        function showPassedScreen(roundId){
+            const roundNames = {
+                1: "WOLVES OF WALL STREET",
+                2: "DIVIDED LOYALTIES",
+                3: "THE BARTER TRADE",
+                4: "THE INSIDER'S DILEMMA"
+            };
+
+            const previousRound = roundId - 1;
+            const currentRoundName = roundNames[roundId] || `ROUND ${roundId}`;
+
+            let message = `YOU HAVE MADE IT THROUGH ROUND ${previousRound}. WELCOME TO ROUND ${roundId} — ${currentRoundName}`;
+
+            document.getElementById("passed-message").innerText = message;
+            document.getElementById("passed-screen").style.display = "flex";
+            lucide.createIcons();
+        }
+
+        function continueToRound(){
+            // Close the passed screen
+            document.getElementById("passed-screen").style.display = "none";
+
+            // Decrypt the current round
+            const team = getTeamSession();
+            const decrypted = getDecrypted();
+            decrypted[`${team}_${currentPassedRoundId}`] = true;
+            setDecrypted(decrypted);
+
+            // Render to show unlocked content
+            render();
+
+            // Smooth scroll to the round
+            setTimeout(() => {
+                const roundElement = document.getElementById(`round${currentPassedRoundId}`);
+                if(roundElement){
+                    roundElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 500);
         }
 
         window.addEventListener("load", () => {
