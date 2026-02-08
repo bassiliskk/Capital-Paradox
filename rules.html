@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Rules and regulations for CAPITAL Paradox finance championship">
+    <title>Rules & Regulations | CAPITAL Paradox</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'capital-red': '#DC2626',
+                        'void-black': '#050505',
+                    },
+                    fontFamily: {
+                        'display': ['Bebas Neue', 'sans-serif'],
+                        'script': ['Dancing Script', 'cursive'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'body': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { background-color: #050505; color: #FAFAFA; }
+        
+        .rule-number {
+            font-family: 'Bebas Neue', sans-serif;
+            color: rgba(220, 38, 38, 0.2);
+            font-size: 4rem;
+            line-height: 1;
+        }
+        
+        .nav-link {
+            position: relative;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: #DC2626;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+        }
+        
+        .nav-link:hover::after {
+            transform: translateX(0);
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        @media (max-width: 768px) {
+            .rule-number { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body class="font-body bg-void-black">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-void-black/95 backdrop-blur-md border-b border-capital-red/20" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="index.html" class="flex items-center space-x-2" aria-label="CAPITAL Paradox Home">
+                    <span class="font-display text-3xl tracking-wider text-white">CAPITAL</span>
+                    <span class="font-script text-2xl text-capital-red -rotate-6">Paradox</span>
+                </a>
+                <div class="hidden md:flex space-x-8 font-mono text-sm tracking-widest">
+                    <a href="index.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">HOME</a>
+                    <a href="rounds.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">ROUNDS</a>
+                    <a href="rules.html" class="nav-link relative text-white py-2" aria-current="page">RULES</a>
+                    <a href="contact.html" class="text-capital-red hover:text-white transition-colors border border-capital-red px-6 py-2 hover:bg-capital-red">REGISTER</a>
+                </div>
+                <button 
+                    class="md:hidden text-white" 
+                    onclick="toggleMobileMenu()"
+                    aria-label="Toggle mobile menu"
+                    aria-expanded="false"
+                    id="mobile-menu-button">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-void-black border-b border-capital-red/20">
+            <div class="px-4 pt-2 pb-6 space-y-2 font-mono">
+                <a href="index.html" class="block py-2 text-gray-400 hover:text-white">HOME</a>
+                <a href="rounds.html" class="block py-2 text-gray-400 hover:text-white">ROUNDS</a>
+                <a href="rules.html" class="block py-2 text-white">RULES</a>
+                <a href="contact.html" class="block py-2 text-capital-red">REGISTER</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="pt-28 pb-10 sm:pt-32 sm:pb-12 bg-neutral-900 border-b border-capital-red/20">
+        <div class="max-w-4xl mx-auto px-4">
+            <span class="font-mono text-capital-red text-sm tracking-widest uppercase">Field Manual</span>
+            <h1 class="font-display text-4xl sm:text-5xl md:text-8xl text-white mt-2">RULES &<br>REGULATIONS</h1>
+            <p class="text-gray-300 mt-4 sm:mt-6 font-mono text-sm max-w-2xl">Violation of any protocol results in immediate disqualification. The organizing committee reserves absolute authority.</p>
+        </div>
+    </section>
+
+    <!-- Rules Content -->
+    <section class="py-10 sm:py-16 bg-void-black">
+        <div class="max-w-4xl mx-auto px-4 space-y-12">
+
+            <!-- Eligibility -->
+            <article class="group">
+                <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <span class="rule-number select-none" aria-hidden="true">01</span>
+                    <div class="pt-4 flex-1 border-b border-gray-800 pb-8 group-hover:border-capital-red/50 transition-colors">
+                        <h2 class="font-display text-2xl text-white mb-3">ELIGIBILITY & TEAM COMPOSITION</h2>
+                        <ul class="font-mono text-sm text-gray-300 space-y-2 leading-relaxed">
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Open to all UG and PG students from all colleges.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> No limit to number of teams per college.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Each team must consist of exactly <strong class="text-white font-bold">two (2) participants</strong> from the same institution.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Equipment -->
+            <article class="group">
+                <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <span class="rule-number select-none" aria-hidden="true">02</span>
+                    <div class="pt-4 flex-1 border-b border-gray-800 pb-8 group-hover:border-capital-red/50 transition-colors">
+                        <h2 class="font-display text-2xl text-white mb-3">EQUIPMENT PROTOCOL</h2>
+                        <div class="bg-capital-red/5 border-l-2 border-capital-red p-4 mb-4">
+                            <p class="font-mono text-sm text-white"><strong>CRITICAL:</strong> Every participant must carry their own physical calculators.</p>
+                        </div>
+                        <ul class="font-mono text-sm text-gray-300 space-y-2 leading-relaxed">
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> <strong class="text-white">Strictly prohibited:</strong> Mobile phones for calculations during events.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Teams without calculators will be handicapped but not excused from participation.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Surprise Rounds -->
+            <article class="group">
+                <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <span class="rule-number select-none" aria-hidden="true">03</span>
+                    <div class="pt-4 flex-1 border-b border-gray-800 pb-8 group-hover:border-capital-red/50 transition-colors">
+                        <h2 class="font-display text-2xl text-white mb-3">SURPRISE ROUND STRUCTURE</h2>
+                        <ul class="font-mono text-sm text-gray-300 space-y-2 leading-relaxed">
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> <strong class="text-white">All rounds are surprise rounds.</strong></li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Format, tasks, and evaluation criteria disclosed only at the start of each round.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Time limits specified at round commencement and strictly enforced.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Conduct -->
+            <article class="group">
+                <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <span class="rule-number select-none" aria-hidden="true">04</span>
+                    <div class="pt-4 flex-1 border-b border-gray-800 pb-8 group-hover:border-capital-red/50 transition-colors">
+                        <h2 class="font-display text-2xl text-white mb-3">CONDUCT & DISCIPLINE</h2>
+                        <ul class="font-mono text-sm text-gray-300 space-y-2 leading-relaxed">
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Strict adherence to instructions from hosts, judges, and coordinators required.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Professional conduct mandatory throughout event duration.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> <strong class="text-red-500">Zero tolerance:</strong> Vulgarity, plagiarism, disrespect toward volunteers/coordinators/judges leads to immediate disqualification and further consequences.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Originality -->
+            <article class="group">
+                <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <span class="rule-number select-none" aria-hidden="true">05</span>
+                    <div class="pt-4 flex-1 border-b border-gray-800 pb-8 group-hover:border-capital-red/50 transition-colors">
+                        <h2 class="font-display text-2xl text-white mb-3">ORIGINALITY & FAIR PRACTICE</h2>
+                        <ul class="font-mono text-sm text-gray-300 space-y-2 leading-relaxed">
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Participants must ensure absolute originality of ideas.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Any form of copying, unfair practice, or academic dishonesty will result in immediate elimination.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Judging -->
+            <article class="group">
+                <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <span class="rule-number select-none" aria-hidden="true">06</span>
+                    <div class="pt-4 flex-1 border-b border-gray-800 pb-8 group-hover:border-capital-red/50 transition-colors">
+                        <h2 class="font-display text-2xl text-white mb-3">JUDGING & AUTHORITY</h2>
+                        <ul class="font-mono text-sm text-gray-300 space-y-2 leading-relaxed">
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> All judging and scoring decisions regarding financial rationale and risk assessment are final.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Judges' decisions are binding. <strong class="text-white">No appeals will be tolerated.</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Liability -->
+            <article class="group">
+                <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <span class="rule-number select-none" aria-hidden="true">07</span>
+                    <div class="pt-4 flex-1 border-b border-gray-800 pb-8 group-hover:border-capital-red/50 transition-colors">
+                        <h2 class="font-display text-2xl text-white mb-3">LIABILITY & MODIFICATIONS</h2>
+                        <ul class="font-mono text-sm text-gray-300 space-y-2 leading-relaxed">
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Organizing committee not responsible for issues arising from technical glitches.</li>
+                            <li class="flex gap-3"><span class="text-capital-red" aria-hidden="true">›</span> Committee reserves absolute right to modify rules, formats, or schedules at any stage of the competition.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+    <!-- Warning -->
+    <section class="py-16 bg-capital-red/5 border-t border-capital-red/20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <i data-lucide="alert-triangle" class="w-12 h-12 text-capital-red mx-auto mb-4"></i>
+            <h2 class="font-display text-3xl text-white mb-4">FINAL AUTHORITY</h2>
+            <p class="font-mono text-gray-300 text-sm max-w-2xl mx-auto">Participation constitutes acceptance of all rules and granting of discretionary powers to the organizing committee. The market is unforgiving. So are we.</p>
+            <div class="mt-8">
+                <a href="contact.html" class="inline-block bg-capital-red text-white font-mono font-bold px-8 py-4 hover:bg-white hover:text-capital-red transition-all">
+                    PROCEED TO REGISTRATION
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        lucide.createIcons();
+        
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            
+            menu.classList.toggle('hidden');
+            button.setAttribute('aria-expanded', !isExpanded);
+        }
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            
+            if (!menu.classList.contains('hidden') && 
+                !menu.contains(event.target) && 
+                !button.contains(event.target)) {
+                menu.classList.add('hidden');
+                button.setAttribute('aria-expanded', 'false');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Explore the four rounds of CAPITAL Paradox finance championship">
+<title>Rounds | CAPITAL Paradox</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                'capital-red': '#DC2626',
+                'void-black': '#050505',
+            },
+            fontFamily: {
+                'display': ['Bebas Neue', 'sans-serif'],
+                'script': ['Dancing Script', 'cursive'],
+                'mono': ['JetBrains Mono', 'monospace'],
+                'body': ['Inter', 'sans-serif']
+            }
+        }
+    }
+}
+</script>
+
+<style>
+body { background-color: #050505; color: #FAFAFA; }
+
+.grid-bg {
+    background-image: linear-gradient(rgba(220, 38, 38, 0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(220, 38, 38, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: #DC2626;
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+}
+
+.nav-link:hover::after {
+    transform: translateX(0);
+}
+
+.logout-btn {
+    border: 1px solid #DC2626;
+    color: #DC2626;
+    padding: 6px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    transition: all 0.3s;
+}
+
+.logout-btn:hover {
+    background: #DC2626;
+    color: white;
+}
+
+.locked-overlay {
+    background: rgba(5, 5, 5, 0.95);
+    backdrop-filter: blur(4px);
+}
+
+.classified-stamp {
+    transform: rotate(-5deg);
+    border: 3px solid #DC2626;
+    color: #DC2626;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.3em;
+    opacity: 0.8;
+}
+
+.code-input {
+    background: rgba(220, 38, 38, 0.1);
+    border: 2px solid #DC2626;
+    color: white;
+    text-align: center;
+    letter-spacing: 0.2em;
+}
+
+.code-input:focus {
+    background: rgba(220, 38, 38, 0.2);
+    outline: none;
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+}
+
+.unlock-btn {
+    background: #DC2626;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.unlock-btn:hover {
+    background: white;
+    color: #DC2626;
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.blur-content {
+    filter: blur(8px);
+    user-select: none;
+    pointer-events: none;
+}
+
+@keyframes glitch {
+    0% { transform: translate(0) }
+    20% { transform: translate(-2px, 2px) }
+    40% { transform: translate(-2px, -2px) }
+    60% { transform: translate(2px, 2px) }
+    80% { transform: translate(2px, -2px) }
+    100% { transform: translate(0) }
+}
+
+.glitch-text {
+    animation: glitch 2s infinite;
+}
+
+.read-more-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out;
+}
+
+.read-more-content.expanded {
+    max-height: 5000px;
+    transition: max-height 0.7s ease-in;
+}
+
+.read-more-btn {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.read-more-btn:hover {
+    transform: translateX(4px);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.loading-spinner {
+    border: 3px solid #333;
+    border-top: 3px solid #DC2626;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .mobile-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(5, 5, 5, 0.95);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(220, 38, 38, 0.3);
+        z-index: 50;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .content-padding { padding-bottom: 80px; }
+}
+
+@media (min-width: 769px) { 
+    .mobile-nav { display: none; } 
+}
+</style>
+</head>
+<body class="font-body bg-void-black content-padding">
+
+    <!-- Desktop Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-void-black/95 backdrop-blur-md border-b border-capital-red/20" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="index.html" class="flex items-center space-x-2" aria-label="CAPITAL Paradox Home">
+                    <span class="font-display text-3xl tracking-wider text-white">CAPITAL</span>
+                    <span class="font-script text-2xl text-capital-red -rotate-6">Paradox</span>
+                </a>
+                <div class="hidden md:flex space-x-8 font-mono text-sm tracking-widest">
+                    <a href="index.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">HOME</a>
+                    <a href="rounds.html" class="nav-link relative text-white py-2" aria-current="page">ROUNDS</a>
+                    <a href="rules.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">RULES</a>
+                    <a href="contact.html" class="text-capital-red hover:text-white transition-colors border border-capital-red px-6 py-2 hover:bg-capital-red">REGISTER</a>
+                    <span id="team-badge" class="hidden text-capital-red border border-capital-red px-3 py-2 text-xs tracking-widest">TEAM</span>
+                    <button id="team-logout" class="logout-btn hidden" onclick="logoutTeam()" aria-label="Log out from team session">LOG OUT</button>
+                </div>
+                <button 
+                    class="md:hidden text-white" 
+                    onclick="toggleMobileMenu()"
+                    aria-label="Toggle mobile menu"
+                    aria-expanded="false"
+                    id="mobile-menu-button">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-void-black border-b border-capital-red/20">
+            <div class="px-4 pt-2 pb-6 space-y-2 font-mono">
+                <a href="index.html" class="block py-2 text-gray-400 hover:text-white">HOME</a>
+                <a href="rounds.html" class="block py-2 text-white">ROUNDS</a>
+                <a href="rules.html" class="block py-2 text-gray-400 hover:text-white">RULES</a>
+                <a href="contact.html" class="block py-2 text-capital-red">REGISTER</a>
+                <div id="team-badge-mobile" class="hidden py-2 text-capital-red text-xs tracking-widest">TEAM</div>
+                <button id="team-logout-mobile" class="hidden w-full text-left py-2 text-capital-red hover:text-white" onclick="logoutTeam()" aria-label="Log out from team session">LOG OUT</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Firebase Loading State -->
+    <div id="firebase-loading" class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="font-mono text-gray-400 text-sm">Initializing secure connection...</p>
+        </div>
+    </div>
+
+    <!-- Firebase Error State -->
+    <div id="firebase-error" class="min-h-screen flex items-center justify-center" style="display: none;">
+        <div class="text-center max-w-md mx-4">
+            <i data-lucide="alert-triangle" class="w-16 h-16 text-capital-red mx-auto mb-4"></i>
+            <h2 class="font-display text-3xl text-white mb-4">CONNECTION FAILED</h2>
+            <p class="font-mono text-gray-400 text-sm mb-6">Unable to connect to the database. Please check your internet connection and try again.</p>
+            <button onclick="window.location.reload()" class="bg-capital-red text-white font-mono px-6 py-3 hover:bg-white hover:text-capital-red transition-all">
+                RETRY
+            </button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <section class="pt-32 pb-12 grid-bg" id="main-content" style="display: none;">
+        <div class="max-w-7xl mx-auto px-4">
+            <span class="font-mono text-capital-red text-sm tracking-widest">SEQUENTIAL EXECUTION PROTOCOL</span>
+            <h1 class="font-display text-5xl md:text-8xl text-white mt-2">THE ROUNDS</h1>
+            <div class="flex flex-wrap items-center gap-3 mt-4">
+                <p id="welcome" class="text-capital-red font-mono text-lg"></p>
+                <button id="team-logout-inline" class="logout-btn hidden" onclick="logoutTeam()" aria-label="Log out from team session">LOG OUT</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rounds Container -->
+    <section class="py-12 bg-void-black" id="rounds-section" style="display: none;">
+        <div id="rounds-container" class="max-w-6xl mx-auto px-4 space-y-12"></div>
+    </section>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav md:hidden" role="navigation" aria-label="Mobile navigation">
+        <a href="index.html" class="flex flex-col items-center text-gray-400 hover:text-white">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">BACK</span>
+        </a>
+        <a href="index.html" class="flex flex-col items-center text-gray-500 hover:text-white">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">HOME</span>
+        </a>
+        <a href="rules.html" class="flex flex-col items-center text-gray-400 hover:text-white">
+            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">NEXT</span>
+        </a>
+    </nav>
+
+    <!-- Team Login Screen -->
+    <div id="team-login-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[999]" style="display: none;">
+        <div class="border border-red-700 p-10 rounded-lg text-center max-w-md w-full mx-4">
+            <h2 class="text-2xl mb-4 font-display">TEAM ACCESS PORTAL</h2>
+            <label for="team-login-input" class="sr-only">Enter your team code</label>
+            <input 
+                id="team-login-input" 
+                class="code-input w-full p-4 rounded mb-4 font-mono" 
+                placeholder="ENTER TEAM CODE"
+                aria-label="Team login code"
+                autocomplete="off">
+            <button onclick="login()" class="unlock-btn w-full py-3 mb-6 font-mono tracking-wider">ACCESS</button>
+            <div class="flex flex-wrap justify-center gap-6 text-sm font-mono">
+                <a href="index.html" class="text-gray-400 hover:text-white transition-colors">HOME</a>
+                <span class="text-capital-red">ROUNDS</span>
+                <a href="rules.html" class="text-gray-400 hover:text-white transition-colors">RULES</a>
+                <a href="contact.html" class="text-gray-400 hover:text-white transition-colors">REGISTER</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Elimination Screen -->
+    <div id="elimination-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[998]" style="display: none;" role="dialog" aria-labelledby="elim-title">
+        <div class="text-center max-w-2xl mx-4">
+            <div class="mb-8 flex justify-center">
+                <div class="relative">
+                    <div class="w-32 h-32 border-4 border-capital-red rounded-full flex items-center justify-center animate-pulse">
+                        <i data-lucide="x" class="w-20 h-20 text-capital-red"></i>
+                    </div>
+                </div>
+            </div>
+
+            <h2 id="elim-title" class="font-display text-5xl md:text-7xl text-capital-red mb-6 relative inline-block">
+                <span class="relative">
+                    ELIMINATED
+                    <span class="absolute inset-0 flex items-center">
+                        <span class="w-full border-t-4 border-capital-red"></span>
+                    </span>
+                </span>
+            </h2>
+
+            <div class="space-y-4 mb-8">
+                <p class="text-white text-2xl md:text-3xl font-display">YOUR TEAM HAS BEEN ELIMINATED</p>
+                <p class="text-gray-400 font-mono text-sm">Thank you for participating in CAPITAL Paradox.</p>
+                <p id="elim-round-name" class="text-capital-red font-mono text-lg"></p>
+            </div>
+
+            <button onclick="closeEliminationScreen()" class="bg-capital-red text-white font-mono px-8 py-3 hover:bg-white hover:text-capital-red transition-all border border-capital-red">
+                RETURN TO ROUNDS
+            </button>
+        </div>
+    </div>
+
+    <!-- Passed/Congratulations Screen -->
+    <div id="passed-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[998]" style="display: none;" role="dialog" aria-labelledby="passed-title">
+        <div class="text-center max-w-2xl mx-4">
+            <div class="mb-8 flex justify-center">
+                <div class="relative">
+                    <div class="w-32 h-32 border-4 border-green-500 rounded-full flex items-center justify-center animate-pulse">
+                        <i data-lucide="check" class="w-20 h-20 text-green-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <h2 id="passed-title" class="font-display text-5xl md:text-7xl text-green-500 mb-6 relative inline-block">
+                <span class="relative">
+                    PASSED
+                </span>
+            </h2>
+
+            <div class="space-y-4 mb-8">
+                <p class="text-white text-2xl md:text-3xl font-display">CONGRATULATIONS!</p>
+                <p id="passed-message" class="text-green-500 font-mono text-lg"></p>
+            </div>
+
+            <button onclick="continueToRound()" class="bg-green-500 text-white font-mono px-8 py-3 hover:bg-white hover:text-green-500 transition-all border border-green-500">
+                CONTINUE TO THE ROUND
+            </button>
+        </div>
+    </div>
+
+    <!-- Load Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // ==========================================
+        // SESSION MANAGEMENT - Using localStorage for persistence
+        // ==========================================
+        const TEAM_SESSION_KEY = "capital_team_session";
+        const ADMIN_SESSION_KEY = "capital_admin_session";
+        const DECRYPTED_SESSION_KEY = "capital_decrypted";
+
+        // Store current round ID for passed screen
+        let currentPassedRoundId = null;
+        let firebaseReady = false;
+
+        // Get team from localStorage (persists across page reloads)
+        function getTeamSession() {
+            return localStorage.getItem(TEAM_SESSION_KEY);
+        }
+
+        function setTeamSession(team) {
+            localStorage.setItem(TEAM_SESSION_KEY, team);
+        }
+
+        function clearTeamSession() {
+            localStorage.removeItem(TEAM_SESSION_KEY);
+        }
+
+        // Get decrypted rounds from localStorage
+        function getDecrypted() {
+            const data = localStorage.getItem(DECRYPTED_SESSION_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+
+        function setDecrypted(data) {
+            localStorage.setItem(DECRYPTED_SESSION_KEY, JSON.stringify(data));
+        }
+
+        function clearTeamDecrypted(team) {
+            if (!team) return;
+            const decrypted = getDecrypted();
+            const prefix = `${team}_`;
+            Object.keys(decrypted).forEach((key) => {
+                if (key.startsWith(prefix)) {
+                    delete decrypted[key];
+                }
+            });
+            setDecrypted(decrypted);
+        }
+
+        function updateLogoutUI(team) {
+            const desktopBtn = document.getElementById("team-logout");
+            const mobileBtn = document.getElementById("team-logout-mobile");
+            const inlineBtn = document.getElementById("team-logout-inline");
+            const badge = document.getElementById("team-badge");
+            const badgeMobile = document.getElementById("team-badge-mobile");
+            const show = !!team;
+            if (desktopBtn) desktopBtn.classList.toggle("hidden", !show);
+            if (mobileBtn) mobileBtn.classList.toggle("hidden", !show);
+            if (inlineBtn) inlineBtn.classList.toggle("hidden", !show);
+            if (badge) {
+                badge.classList.toggle("hidden", !show);
+                if (show) badge.textContent = `TEAM ${team}`;
+            }
+            if (badgeMobile) {
+                badgeMobile.classList.toggle("hidden", !show);
+                if (show) badgeMobile.textContent = `TEAM ${team}`;
+            }
+        }
+
+        function logoutTeam() {
+            const team = getTeamSession();
+            clearTeamDecrypted(team);
+            clearTeamSession();
+            updateLogoutUI(null);
+            render();
+        }
+
+        async function login(){
+            const raw = document.getElementById("team-login-input").value.trim();
+
+            if(!raw) {
+                alert("Please enter a team code");
+                return;
+            }
+
+            // Check if this is admin login
+            try {
+                const isAdmin = await validateAdminAccess(raw);
+                if(isAdmin){
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
+                    window.location.replace("admin.html");
+                    return;
+                }
+            } catch(e) {
+                // Not admin, continue as team
+            }
+
+            // This is a team login
+            const teamCode = raw.toUpperCase();
+            setTeamSession(teamCode);
+            render();
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            
+            menu.classList.toggle('hidden');
+            button.setAttribute('aria-expanded', !isExpanded);
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            
+            if (!menu.classList.contains('hidden') && 
+                !menu.contains(event.target) && 
+                !button.contains(event.target)) {
+                menu.classList.add('hidden');
+                button.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // ==========================================
+        // ROUNDS DATA
+        // ==========================================
+        const roundsData = [
+            {
+                id: 1,
+                title: "WOLVES OF WALL STREET",
+                subtitle: "Strategic Valuation and Hidden Costs",
+                concept: "THE CAPITAL PARADOX AUCTION",
+                icon: "trending-up",
+                description: "This is a competitive auction testing your ability to assess value and manage resources under pressure. Every decision carries immediate costs and potential future consequences.",
+                overview: {
+                    teamsCapital: [
+                        "Each team consists of two members.",
+                        "Starting capital: INR 100,000 per team.",
+                        "This is your sole resource for the entire round."
+                    ],
+                    availableAssets: "Various strategic assets will be available for purchase through the auction, each with assigned values and potential applications. Some assets may carry hidden consequences that will only be revealed in subsequent rounds.",
+                    warning: "Not all items are equal. Strategic value may differ significantly from face value."
+                },
+                strategicChoice: {
+                    title: "The Strategic Choice",
+                    points: [
+                        "Bidding is optional. Choosing not to bid is also a strategy -- and may be as powerful as winning.",
+                        "There is no \"safe option.\"",
+                        "Each team must buy at least 2 items."
+                    ]
+                },
+                finalWarning: {
+                    lines: [
+                        "This is not a typical college auction.",
+                        "This is a simulation of real power, risk, and consequence.",
+                        "Bid boldly -- but think brutally."
+                    ]
+                }
+            },
+            {
+                id: 2,
+                title: "DIVIDED LOYALTIES",
+                subtitle: "Partners separated across time streams",
+                concept: "INDIVIDUAL PERFORMANCE & TRUST",
+                icon: "split",
+                description: "Team members are isolated and evaluated independently across analytical tasks, ethical judgments, and pressure scenarios. No communication allowed.",
+                outcomes: [
+                    { label: "Both below benchmark", value: "ELIMINATION", color: "text-red-500" },
+                    { label: "Split performance", value: "Solo OR Revival", color: "text-yellow-500" },
+                    { label: "Both strong", value: "Partnership continues", color: "text-green-500" }
+                ],
+                special: "The Revival Gamble: Eliminated partners may be reinstated at a point cost.",
+                quote: "\"Save your ally and handicap yourself, or proceed alone.\""
+            },
+            {
+                id: 3,
+                title: "THE BARTER TRADE",
+                subtitle: "Value is fluid. Liquidity is illusion.",
+                concept: "RESOURCE ARBITRAGE",
+                icon: "refresh-cw",
+                description: "Teams receive unique resource portfolios with differing utilities and liquidity. Must negotiate with competitors to construct optimal portfolio.",
+                twist: "Mid-round shift: High-demand resources devalued. Obscure assets become critical.",
+                criteria: ["Portfolio value vs. benchmark", "Strategic coherence", "Risk exposure"]
+            },
+            {
+                id: 4,
+                title: "THE INSIDER'S DILEMMA",
+                subtitle: "Knowledge is power. Power is dangerous.",
+                concept: "INFORMATION ASYMMETRY & RISK",
+                icon: "eye-off",
+                description: "Teams receive classified information: legitimate intel, misleading rumors, and illegal non-public data. Must invest without knowing source reliability.",
+                enforcement: "Post-decision probabilistic audit system. Illegal usage may yield returns or trigger penalties.",
+                defense: ["Financial rationale", "Risk assessment", "Ethical navigation"]
+            }
+        ];
+
+        function toggleReadMore(roundId) {
+            const content = document.getElementById(`read-more-${roundId}`);
+            const btn = document.getElementById(`read-more-btn-${roundId}`);
+            const icon = document.getElementById(`read-more-icon-${roundId}`);
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                btn.innerHTML = '<span>READ MORE</span>';
+                icon.setAttribute('data-lucide', 'chevron-down');
+            } else {
+                content.classList.add('expanded');
+                btn.innerHTML = '<span>READ LESS</span>';
+                icon.setAttribute('data-lucide', 'chevron-up');
+            }
+            lucide.createIcons();
+        }
+
+        function render(){
+            const team = getTeamSession();
+            updateLogoutUI(team);
+
+            if(!team){
+                document.getElementById("team-login-screen").style.display = "flex";
+                document.getElementById("main-content").style.display = "none";
+                document.getElementById("rounds-section").style.display = "none";
+                document.getElementById("firebase-loading").style.display = "none";
+                return;
+            }
+
+            document.getElementById("team-login-screen").style.display = "none";
+            document.getElementById("firebase-loading").style.display = "none";
+            document.getElementById("main-content").style.display = "block";
+            document.getElementById("rounds-section").style.display = "block";
+            
+            document.getElementById("welcome").innerText = `WELCOME, TEAM ${team}`;
+
+            // Check if Firebase is available
+            if (!database) {
+                document.getElementById("firebase-error").style.display = "flex";
+                document.getElementById("main-content").style.display = "none";
+                document.getElementById("rounds-section").style.display = "none";
+                return;
+            }
+
+            // Fetch data from Firebase with error handling
+            database.ref('teamStates').once('value').then((snapshot) => {
+                const state = snapshot.val() || {};
+                const decrypted = getDecrypted();
+                const container = document.getElementById("rounds-container");
+                container.innerHTML = "";
+
+                roundsData.forEach(round => {
+                    const status = (state[round.id] && state[round.id][team]) ? state[round.id][team] : "revoked";
+                    const canDecrypt = (status === "access" || status === "passed");
+                    const hasDecrypted = decrypted[`${team}_${round.id}`] === true;
+
+                    if(status === "revoked" && hasDecrypted){
+                        delete decrypted[`${team}_${round.id}`];
+                        setDecrypted(decrypted);
+                    }
+
+                    const locked = !canDecrypt || !hasDecrypted;
+                    const roundNum = String(round.id).padStart(2, '0');
+
+                    let contentHtml = '';
+
+                    // Round 1 - Wolves of Wall Street
+                    if(round.id === 1) {
+                        contentHtml = `
+                            <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
+                                <p>${round.description}</p>
+
+                                <!-- Teams & Capital -->
+                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                    <p class="text-xs uppercase text-gray-500 mb-2">TEAMS & CAPITAL</p>
+                                    <ul class="space-y-2 text-gray-300 text-xs md:text-sm">
+                                        ${round.overview.teamsCapital.map(t => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${t}</li>`).join('')}
+                                    </ul>
+                                </div>
+
+                                <!-- Available Assets -->
+                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                    <p class="text-xs uppercase text-gray-500 mb-2">AVAILABLE ASSETS</p>
+                                    <p class="text-gray-300 text-xs md:text-sm mb-2">${round.overview.availableAssets}</p>
+                                    <p class="text-capital-red text-xs md:text-sm font-bold mt-2">${round.overview.warning}</p>
+                                </div>
+
+                                <!-- Read More Button -->
+                                <button onclick="toggleReadMore(${round.id})" class="read-more-btn flex items-center gap-2 text-capital-red font-mono text-xs hover:text-white transition-colors mt-4" aria-label="Read more about Round 1">
+                                    <span id="read-more-btn-${round.id}">READ MORE</span>
+                                    <i id="read-more-icon-${round.id}" data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+
+                                <!-- Expandable Content -->
+                                <div id="read-more-${round.id}" class="read-more-content space-y-4">
+                                    <!-- Strategic Choice -->
+                                    <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
+                                        <h3 class="font-display text-lg md:text-xl text-white mb-3">${round.strategicChoice.title}</h3>
+                                        <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-2">
+                                            ${round.strategicChoice.points.map(p => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${p}</li>`).join('')}
+                                        </ul>
+                                    </div>
+
+                                    <!-- Final Warning -->
+                                    <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                        <h3 class="font-display text-lg md:text-xl text-capital-red mb-3">FINAL WARNING</h3>
+                                        <div class="space-y-2">
+                                            ${round.finalWarning.lines.map(line => `<p class="font-mono text-xs md:text-sm text-gray-300">${line}</p>`).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Other rounds content
+                        contentHtml = `
+                            <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                                <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
+                                    <p>${round.description}</p>
+
+                                    ${round.mechanism ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-2">THE MECHANISM</p>
+                                            <ul class="space-y-2 text-gray-300 text-xs md:text-sm">
+                                                ${round.mechanism.map(m => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${m}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.outcomes ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-2">OUTCOME MATRIX</p>
+                                            <div class="space-y-1 text-xs md:text-sm">
+                                                ${round.outcomes.map(o => `
+                                                    <div class="flex justify-between border-b border-gray-800 pb-1 last:border-0">
+                                                        <span class="text-gray-300 text-xs">${o.label}</span>
+                                                        <span class="${o.color} font-bold text-xs">${o.value}</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.twist ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-1">THE TWIST</p>
+                                            <p class="text-gray-300 text-xs md:text-sm">${round.twist}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.enforcement ? `
+                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
+                                            <p class="text-xs uppercase text-gray-500 mb-1">ENFORCEMENT</p>
+                                            <p class="text-gray-300 text-xs md:text-sm">${round.enforcement}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div class="space-y-3 md:space-y-4">
+                                    ${round.elimination ? `
+                                        <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                            <h3 class="font-display text-lg md:text-xl text-white mb-2">ELIMINATION TRIGGERS</h3>
+                                            <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-1">
+                                                ${round.elimination.map(e => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${e}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.criteria ? `
+                                        <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
+                                            <h3 class="font-display text-lg md:text-xl text-capital-red mb-2">EVALUATION CRITERIA</h3>
+                                            <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-1">
+                                                ${round.criteria.map(c => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${c}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.defense ? `
+                                        <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
+                                            <h3 class="font-display text-lg md:text-xl text-white mb-2">DEFENSE REQUIRED</h3>
+                                            <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-1">
+                                                ${round.defense.map(d => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${d}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.special ? `
+                                        <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
+                                            <h3 class="font-display text-lg md:text-xl text-white mb-1">${round.special.split(':')[0]}</h3>
+                                            <p class="font-mono text-xs text-gray-300 mb-2">${round.special.split(':').slice(1).join(':')}</p>
+                                            ${round.quote ? `<p class="text-xs text-capital-red italic font-mono border-t border-capital-red/20 pt-2">${round.quote}</p>` : ''}
+                                        </div>
+                                    ` : ''}
+
+                                    ${round.skills ? `
+                                        <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
+                                            <h3 class="font-display text-lg md:text-xl text-capital-red mb-2">SKILLS TESTED</h3>
+                                            <p class="font-mono text-xs md:text-sm text-gray-300">${round.skills}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    const html = `
+                        <div id="round${round.id}" class="relative scroll-mt-24" data-round-id="${round.id}">
+                            <div class="absolute -left-2 md:-left-12 top-0 font-mono text-[6rem] md:text-[12rem] font-bold ${locked ? 'text-gray-800' : 'text-capital-red/5'} select-none -z-10" aria-hidden="true">
+                                ${roundNum}
+                            </div>
+
+                            <div class="relative z-10 border-l-2 ${locked ? 'border-gray-800' : 'border-capital-red'} pl-6 md:pl-12 py-8 min-h-[400px]">
+
+                                ${locked ? `
+                                    <div class="locked-overlay absolute inset-0 z-30 flex flex-col items-center justify-center -m-4 md:-m-8 p-4 md:p-8 rounded-lg">
+                                        <div class="classified-stamp px-4 py-2 text-2xl md:text-4xl mb-4 glitch-text text-center">
+                                            CLASSIFIED
+                                        </div>
+
+                                        <div class="w-full max-w-md space-y-4">
+                                            <div class="text-center mb-6">
+                                                <p class="text-gray-400 font-mono text-xs md:text-sm mb-2">ROUND ${round.id} ENCRYPTION</p>
+                                                <div class="flex items-center justify-center gap-2 text-capital-red">
+                                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                                    <span class="font-mono text-xs tracking-widest">TEAM CODE REQUIRED</span>
+                                                </div>
+                                            </div>
+
+                                            <label for="code-${round.id}" class="sr-only">Enter team code for Round ${round.id}</label>
+                                            <input 
+                                                type="text" 
+                                                id="code-${round.id}" 
+                                                class="code-input w-full p-4 font-mono text-lg uppercase tracking-widest rounded" 
+                                                placeholder="ENTER TEAM CODE" 
+                                                autocomplete="off"
+                                                aria-label="Team code for Round ${round.id}">
+
+                                            <button onclick="attempt(${round.id})" class="unlock-btn w-full py-3 font-display text-lg tracking-wider rounded flex items-center justify-center gap-2 mt-4">
+                                                <span>DECRYPT</span>
+                                                <i data-lucide="unlock" class="w-5 h-5"></i>
+                                            </button>
+
+                                            <div id="msg-${round.id}" class="text-center mt-4" role="alert" aria-live="polite"></div>
+                                        </div>
+
+                                        <p class="text-gray-600 font-mono text-xs mt-8 text-center max-w-xs">
+                                            Use your assigned team name (uppercase).
+                                        </p>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Unlocked content -->
+                                <div class="${locked ? 'blur-content opacity-30' : ''}">
+                                    <div class="flex flex-wrap items-center gap-3 mb-4">
+                                        <i data-lucide="${round.icon}" class="w-5 h-5 md:w-6 md:h-6 text-capital-red"></i>
+                                        <span class="font-mono text-xs text-capital-red tracking-widest uppercase">${round.concept}</span>
+                                        ${!locked ? `<span class="ml-auto font-mono text-xs text-capital-red flex items-center gap-1"><i data-lucide="unlock" class="w-3 h-3"></i> DECRYPTED</span>` : ''}
+                                    </div>
+
+                                    <h2 class="font-display text-3xl md:text-7xl text-white mb-2 md:mb-4 leading-tight">${round.title}</h2>
+                                    <p class="font-script text-xl md:text-2xl text-gray-500 mb-6 md:mb-8">${round.subtitle}</p>
+
+                                    ${contentHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    container.innerHTML += html;
+                });
+
+                lucide.createIcons();
+            }).catch((error) => {
+                console.error("Firebase error:", error);
+                document.getElementById("firebase-error").style.display = "flex";
+                document.getElementById("main-content").style.display = "none";
+                document.getElementById("rounds-section").style.display = "none";
+            });
+        }
+
+        function attempt(id){
+            const team = getTeamSession();
+            if(!team) return;
+
+            const msg = document.getElementById("msg-"+id);
+            const entered = document.getElementById("code-"+id).value.trim().toUpperCase();
+
+            msg.innerHTML = '';
+
+            if(entered !== team){
+                msg.innerHTML = `<p class="text-red-500 font-mono text-xs mt-2 shake"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>WRONG TEAM CODE</p>`;
+                lucide.createIcons();
+                return;
+            }
+
+            // Fetch current status from Firebase
+            database.ref(`teamStates/${id}/${team}`).once('value').then((snapshot) => {
+                const s = snapshot.val() || "revoked";
+
+                if(s === "revoked"){
+                    msg.innerHTML = `<p class="text-red-500 font-mono text-xs mt-2 shake"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>ACCESS NOT GRANTED BY ADMIN</p>`;
+                    lucide.createIcons();
+                    return;
+                }
+
+                if(s === "eliminated"){
+                    showEliminationScreen(id);
+                    return;
+                }
+
+                if(s === "passed"){
+                    // Show congratulations screen
+                    currentPassedRoundId = id;
+                    showPassedScreen(id);
+                    return;
+                }
+
+                // Access granted (status is "access")
+                const decrypted = getDecrypted();
+                decrypted[`${team}_${id}`] = true;
+                setDecrypted(decrypted);
+
+                msg.innerHTML = `<p class="text-green-500 font-mono text-xs mt-2"><i data-lucide="check-circle" class="w-3 h-3 inline mr-1"></i>DECRYPTION SUCCESSFUL</p>`;
+                lucide.createIcons();
+
+                setTimeout(() => render(), 1500);
+            }).catch((error) => {
+                console.error("Error checking round status:", error);
+                msg.innerHTML = `<p class="text-red-500 font-mono text-xs mt-2">CONNECTION ERROR. PLEASE TRY AGAIN.</p>`;
+            });
+        }
+
+        function showEliminationScreen(roundId){
+            const roundNames = {
+                1: "Round 1 -- WOLVES OF WALL STREET",
+                2: "Round 2 -- DIVIDED LOYALTIES",
+                3: "Round 3 -- THE BARTER TRADE",
+                4: "Round 4 -- THE INSIDER'S DILEMMA"
+            };
+
+            document.getElementById("elim-round-name").innerText = roundNames[roundId] || `Round ${roundId}`;
+            document.getElementById("elimination-screen").style.display = "flex";
+            lucide.createIcons();
+        }
+
+        function closeEliminationScreen(){
+            document.getElementById("elimination-screen").style.display = "none";
+        }
+
+        function showPassedScreen(roundId){
+            const roundNames = {
+                1: "WOLVES OF WALL STREET",
+                2: "DIVIDED LOYALTIES",
+                3: "THE BARTER TRADE",
+                4: "THE INSIDER'S DILEMMA"
+            };
+
+            const previousRound = roundId - 1;
+            const currentRoundName = roundNames[roundId] || `ROUND ${roundId}`;
+
+            let message = `YOU HAVE MADE IT THROUGH ROUND ${previousRound}. WELCOME TO ROUND ${roundId} -- ${currentRoundName}`;
+
+            document.getElementById("passed-message").innerText = message;
+            document.getElementById("passed-screen").style.display = "flex";
+            lucide.createIcons();
+        }
+
+        function continueToRound(){
+            // Close the passed screen
+            document.getElementById("passed-screen").style.display = "none";
+
+            // Decrypt the current round
+            const team = getTeamSession();
+            const decrypted = getDecrypted();
+            decrypted[`${team}_${currentPassedRoundId}`] = true;
+            setDecrypted(decrypted);
+
+            // Render to show unlocked content
+            render();
+
+            // Smooth scroll to the round
+            setTimeout(() => {
+                const roundElement = document.getElementById(`round${currentPassedRoundId}`);
+                if(roundElement){
+                    roundElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 500);
+        }
+
+        // ==========================================
+        // INITIALIZE ON LOAD
+        // ==========================================
+        window.addEventListener("load", () => {
+            lucide.createIcons();
+            
+            // Check if Firebase is ready
+            setTimeout(() => {
+                if(database) {
+                    firebaseReady = true;
+                    render();
+                } else {
+                    document.getElementById("firebase-loading").style.display = "none";
+                    document.getElementById("firebase-error").style.display = "flex";
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
