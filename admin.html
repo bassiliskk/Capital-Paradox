@@ -609,13 +609,13 @@ async function addTeam(){
   
   getTeamList((teams) => {
     if(teams.includes(teamName)){
-      await showModal("Team already exists.");
+      showModal("Team already exists.");
       button.disabled = false;
       return;
     }
     
     if(teams.length >= 35){
-      await showModal("Maximum 35 teams reached.");
+      showModal("Maximum 35 teams reached.");
       button.disabled = false;
       return;
     }
@@ -637,7 +637,7 @@ async function addTeam(){
       render();
     }).catch((error) => {
       console.error("Error initializing new team:", error);
-      await showModal("Error adding team. Please try again.");
+      showModal("Error adding team. Please try again.");
       button.disabled = false;
     });
   });
@@ -668,7 +668,7 @@ async function removeTeam(teamName){
         render();
       }).catch((error) => {
         console.error("Error removing team:", error);
-        await showModal("Error removing team. Please try again.");
+        showModal("Error removing team. Please try again.");
       });
     }
   });
