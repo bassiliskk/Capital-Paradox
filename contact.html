@@ -154,7 +154,24 @@
         @media (min-width: 769px) { 
             .mobile-nav { display: none; } 
         }
-    </style>
+    
+        .input-field.success {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.06);
+        }
+
+        .field-success {
+            color: #22c55e;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .field-success.show {
+            display: block;
+        }
+
+</style>
 </head>
 <body class="font-body content-padding">
 
@@ -292,6 +309,7 @@
                                 aria-required="true"
                                 aria-describedby="team_name_error">
                             <p id="team_name_error" class="field-error">Please enter a team name</p>
+                            <p id="team_name_success" class="field-success">Looks good</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -307,6 +325,7 @@
                                     aria-required="true"
                                     aria-describedby="institution_error">
                                 <p id="institution_error" class="field-error">Please enter institution name</p>
+                                <p id="institution_success" class="field-success">Looks good</p>
                             </div>
                             <div>
                                 <label for="department" class="block font-mono text-xs text-gray-400 uppercase tracking-wider mb-2">Department</label>
@@ -336,6 +355,7 @@
                                         aria-required="true"
                                         aria-describedby="p1_name_error">
                                     <p id="p1_name_error" class="field-error">Please enter participant 1's name</p>
+                                    <p id="p1_name_success" class="field-success">Looks good</p>
                                 </div>
                                 <div>
                                     <label for="p1_email" class="sr-only">Participant 1 Email</label>
@@ -349,6 +369,7 @@
                                         aria-required="true"
                                         aria-describedby="p1_email_error">
                                     <p id="p1_email_error" class="field-error">Please enter a valid email</p>
+                                    <p id="p1_email_success" class="field-success">Looks good</p>
                                 </div>
                                 <div>
                                     <label for="p1_phone" class="sr-only">Participant 1 Phone</label>
@@ -363,6 +384,7 @@
                                         aria-required="true"
                                         aria-describedby="p1_phone_error">
                                     <p id="p1_phone_error" class="field-error">Please enter a valid 10-digit phone number</p>
+                                    <p id="p1_phone_success" class="field-success">Looks good</p>
                                 </div>
                             </div>
                         </div>
@@ -382,6 +404,7 @@
                                         aria-required="true"
                                         aria-describedby="p2_name_error">
                                     <p id="p2_name_error" class="field-error">Please enter participant 2's name</p>
+                                    <p id="p2_name_success" class="field-success">Looks good</p>
                                 </div>
                                 <div>
                                     <label for="p2_email" class="sr-only">Participant 2 Email</label>
@@ -395,6 +418,7 @@
                                         aria-required="true"
                                         aria-describedby="p2_email_error">
                                     <p id="p2_email_error" class="field-error">Please enter a valid email</p>
+                                    <p id="p2_email_success" class="field-success">Looks good</p>
                                 </div>
                                 <div>
                                     <label for="p2_phone" class="sr-only">Participant 2 Phone</label>
@@ -409,6 +433,7 @@
                                         aria-required="true"
                                         aria-describedby="p2_phone_error">
                                     <p id="p2_phone_error" class="field-error">Please enter a valid 10-digit phone number</p>
+                                    <p id="p2_phone_success" class="field-success">Looks good</p>
                                 </div>
                             </div>
                         </div>
@@ -505,34 +530,39 @@
             return re.test(phone.replace(/\s/g, ''));
         }
         
-        function showError(fieldId, show = true) {
+        function setFieldState(fieldId, state) {
             const field = document.getElementById(fieldId);
             const error = document.getElementById(fieldId + '_error');
-            
-            if (show) {
+            const success = document.getElementById(fieldId + '_success');
+
+            field.classList.remove('error', 'success');
+            if (error) error.classList.remove('show');
+            if (success) success.classList.remove('show');
+
+            if (state === 'error') {
                 field.classList.add('error');
-                error.classList.add('show');
-            } else {
-                field.classList.remove('error');
-                error.classList.remove('show');
+                if (error) error.classList.add('show');
+            } else if (state === 'success') {
+                field.classList.add('success');
+                if (success) success.classList.add('show');
             }
         }
-        
+
         function validateField(fieldId, validator = null) {
             const field = document.getElementById(fieldId);
             const value = field.value.trim();
-            
+
             if (!value) {
-                showError(fieldId, true);
+                setFieldState(fieldId, 'error');
                 return false;
             }
-            
+
             if (validator && !validator(value)) {
-                showError(fieldId, true);
+                setFieldState(fieldId, 'error');
                 return false;
             }
-            
-            showError(fieldId, false);
+
+            setFieldState(fieldId, 'success');
             return true;
         }
         

@@ -238,6 +238,38 @@ body{
     align-items: flex-start;
   }
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 5, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-panel {
+  background: #0b0b0b;
+  border: 1px solid #DC2626;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.2);
+}
+
+.modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.modal-input {
+  margin-top: 12px;
+}
+
 </style>
 </head>
 
@@ -315,6 +347,115 @@ Click each cell to cycle through: REVOKED -> ACCESS -> PASSED -> ELIMINATED
 
 <script>
 // ==========================================
+// MODAL HELPERS
+// ==========================================
+
+function showModal(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("admin-modal");
+    const msg = document.getElementById("admin-modal-message");
+    const input = document.getElementById("admin-modal-input");
+    const ok = document.getElementById("admin-modal-ok");
+    const cancel = document.getElementById("admin-modal-cancel");
+
+    msg.textContent = message;
+    input.style.display = "none";
+    cancel.style.display = "none";
+    modal.style.display = "flex";
+
+    const cleanup = () => {
+      modal.style.display = "none";
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+    };
+
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+function confirmAction(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("admin-modal");
+    const msg = document.getElementById("admin-modal-message");
+    const input = document.getElementById("admin-modal-input");
+    const ok = document.getElementById("admin-modal-ok");
+    const cancel = document.getElementById("admin-modal-cancel");
+
+    msg.textContent = message;
+    input.style.display = "none";
+    cancel.style.display = "inline-block";
+    modal.style.display = "flex";
+
+    const cleanup = () => {
+      modal.style.display = "none";
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+    };
+
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+function requestPassword() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("admin-modal");
+    const msg = document.getElementById("admin-modal-message");
+    const input = document.getElementById("admin-modal-input");
+    const ok = document.getElementById("admin-modal-ok");
+    const cancel = document.getElementById("admin-modal-cancel");
+
+    msg.textContent = "Enter admin password:";
+    input.value = "";
+    input.style.display = "block";
+    cancel.style.display = "inline-block";
+    modal.style.display = "flex";
+    input.focus();
+
+    const cleanup = () => {
+      modal.style.display = "none";
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+    };
+
+    const onOk = () => {
+      const val = input.value.trim();
+      cleanup();
+      resolve(val || null);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+// ==========================================
 // ADMIN ACCESS CHECK - IMPROVED SECURITY
 // ==========================================
 
@@ -324,10 +465,10 @@ const ADMIN_SESSION_KEY = "capital_admin_session";
 async function checkAdminAuth() {
   if(sessionStorage.getItem(ADMIN_SESSION_KEY) !== "true"){
     // Prompt for password
-    const password = prompt("Enter admin password:");
+    const password = await requestPassword();
     
     if (!password) {
-      alert("Unauthorized access. Redirecting...");
+      await showModal("Unauthorized access. Redirecting...");
       window.location.href = "rounds.html";
       return false;
     }
@@ -335,14 +476,14 @@ async function checkAdminAuth() {
     try {
       const isValid = await validateAdminAccess(password);
       if (!isValid) {
-        alert("Invalid password. Redirecting...");
+        await showModal("Invalid password. Redirecting...");
         window.location.href = "rounds.html";
         return false;
       }
       sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
       return true;
     } catch (e) {
-      alert("Authentication error. Redirecting...");
+      await showModal("Authentication error. Redirecting...");
       window.location.href = "rounds.html";
       return false;
     }
@@ -382,7 +523,7 @@ function setTeamList(teams){
   if (!database) return;
   database.ref('teamList').set(teams).catch((error) => {
     console.error("Error saving team list:", error);
-    alert("Failed to save team list. Please try again.");
+    showModal("Failed to save team list. Please try again.");
   });
 }
 
@@ -405,7 +546,7 @@ function setTeamState(round, team, state){
   if (!database) return;
   database.ref(`teamStates/${round}/${team}`).set(state).catch((error) => {
     console.error("Error updating team state:", error);
-    alert("Failed to update state. Please try again.");
+    showModal("Failed to update state. Please try again.");
   });
 }
 
@@ -448,18 +589,18 @@ function initializeStates(){
 // TEAM MANAGEMENT
 // ==========================================
 
-function addTeam(){
+async function addTeam(){
   const input = document.getElementById("new-team-input");
   const button = document.getElementById("add-team-button");
   const teamName = input.value.trim().toUpperCase();
   
   if(!teamName){
-    alert("Please enter a team name");
+    await showModal("Please enter a team name.");
     return;
   }
   
   if(!/^[A-Z0-9_]+$/.test(teamName)){
-    alert("Team name can only contain letters, numbers, and underscores");
+    await showModal("Team name can only contain letters, numbers, and underscores.");
     return;
   }
   
@@ -468,13 +609,13 @@ function addTeam(){
   
   getTeamList((teams) => {
     if(teams.includes(teamName)){
-      alert("Team already exists");
+      await showModal("Team already exists.");
       button.disabled = false;
       return;
     }
     
     if(teams.length >= 35){
-      alert("Maximum 35 teams reached");
+      await showModal("Maximum 35 teams reached.");
       button.disabled = false;
       return;
     }
@@ -496,14 +637,15 @@ function addTeam(){
       render();
     }).catch((error) => {
       console.error("Error initializing new team:", error);
-      alert("Error adding team. Please try again.");
+      await showModal("Error adding team. Please try again.");
       button.disabled = false;
     });
   });
 }
 
-function removeTeam(teamName){
-  if(!confirm(`Remove team ${teamName}? This will delete all their data.`)){
+async function removeTeam(teamName){
+  const ok = await confirmAction(`Remove team ${teamName}? This will delete all their data.`);
+  if(!ok){
     return;
   }
   
@@ -526,7 +668,7 @@ function removeTeam(teamName){
         render();
       }).catch((error) => {
         console.error("Error removing team:", error);
-        alert("Error removing team. Please try again.");
+        await showModal("Error removing team. Please try again.");
       });
     }
   });
@@ -626,5 +768,19 @@ async function initialize() {
 // Start initialization when page loads
 window.addEventListener("load", initialize);
 </script>
+
+<!-- Admin Modal -->
+<div id="admin-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+  <div class="modal-panel">
+    <h3 id="admin-modal-title" style="color:#DC2626;font-size:18px;margin-bottom:8px;">NOTICE</h3>
+    <p id="admin-modal-message" style="color:#cfcfcf;font-size:13px;"></p>
+    <input id="admin-modal-input" type="password" class="team-input modal-input" placeholder="Enter admin password" style="width:100%;display:none;" />
+    <div class="modal-actions">
+      <button id="admin-modal-cancel" class="btn" style="max-width:120px;">CANCEL</button>
+      <button id="admin-modal-ok" class="btn" style="max-width:120px;">OK</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

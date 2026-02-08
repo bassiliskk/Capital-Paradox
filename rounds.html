@@ -213,6 +213,34 @@ body { background-color: #050505; color: #FAFAFA; }
 @media (min-width: 769px) { 
     .mobile-nav { display: none; } 
 }
+
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 5, 0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-panel {
+    background: #0b0b0b;
+    border: 1px solid #DC2626;
+    padding: 24px;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(220, 38, 38, 0.2);
+}
+
+.modal-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
 </style>
 </head>
 <body class="font-body bg-void-black content-padding">
@@ -289,6 +317,12 @@ body { background-color: #050505; color: #FAFAFA; }
 
     <!-- Rounds Container -->
     <section class="py-12 bg-void-black" id="rounds-section" style="display: none;">
+        <div id="rounds-loading" class="flex items-center justify-center" style="display:none; min-height: 240px;">
+            <div class="text-center">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <p class="font-mono text-gray-400 text-sm">Loading rounds...</p>
+            </div>
+        </div>
         <div id="rounds-container" class="max-w-6xl mx-auto px-4 space-y-12"></div>
     </section>
 
@@ -389,6 +423,18 @@ body { background-color: #050505; color: #FAFAFA; }
         </div>
     </div>
 
+
+    <!-- App Modal -->
+    <div id="app-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-panel">
+            <h3 id="modal-title" class="font-display text-2xl text-white mb-3">NOTICE</h3>
+            <p id="modal-message" class="font-mono text-sm text-gray-300"></p>
+            <div class="modal-actions">
+                <button id="modal-ok" class="unlock-btn px-6 py-2 font-mono text-sm">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Load Firebase Config -->
     <script src="firebase-config.js"></script>
 
@@ -467,11 +513,26 @@ body { background-color: #050505; color: #FAFAFA; }
             render();
         }
 
+        function showModal(message) {
+            const modal = document.getElementById("app-modal");
+            const msg = document.getElementById("modal-message");
+            const ok = document.getElementById("modal-ok");
+
+            msg.textContent = message;
+            modal.style.display = "flex";
+
+            const handler = () => {
+                modal.style.display = "none";
+                ok.removeEventListener("click", handler);
+            };
+            ok.addEventListener("click", handler);
+        }
+
         async function login(){
             const raw = document.getElementById("team-login-input").value.trim();
 
             if(!raw) {
-                alert("Please enter a team code");
+                showModal("Please enter a team code.");
                 return;
             }
 
@@ -615,6 +676,8 @@ body { background-color: #050505; color: #FAFAFA; }
                 document.getElementById("main-content").style.display = "none";
                 document.getElementById("rounds-section").style.display = "none";
                 document.getElementById("firebase-loading").style.display = "none";
+                const roundsLoading = document.getElementById("rounds-loading");
+                if (roundsLoading) roundsLoading.style.display = "none";
                 return;
             }
 
@@ -634,10 +697,17 @@ body { background-color: #050505; color: #FAFAFA; }
             }
 
             // Fetch data from Firebase with error handling
+            const roundsLoading = document.getElementById("rounds-loading");
+            const roundsContainer = document.getElementById("rounds-container");
+            if (roundsLoading) roundsLoading.style.display = "flex";
+            if (roundsContainer) roundsContainer.style.display = "none";
+
             database.ref('teamStates').once('value').then((snapshot) => {
                 const state = snapshot.val() || {};
                 const decrypted = getDecrypted();
                 const container = document.getElementById("rounds-container");
+                if (roundsLoading) roundsLoading.style.display = "none";
+                if (container) container.style.display = "block";
                 container.innerHTML = "";
 
                 roundsData.forEach(round => {
@@ -863,6 +933,7 @@ body { background-color: #050505; color: #FAFAFA; }
                 lucide.createIcons();
             }).catch((error) => {
                 console.error("Firebase error:", error);
+                if (roundsLoading) roundsLoading.style.display = "none";
                 document.getElementById("firebase-error").style.display = "flex";
                 document.getElementById("main-content").style.display = "none";
                 document.getElementById("rounds-section").style.display = "none";
