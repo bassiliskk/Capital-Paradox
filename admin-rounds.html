@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Rounds | CAPITAL Paradox</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+body{
+  background:#050505;
+  color:white;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.nav{
+  background:#050505;
+  border-bottom:1px solid #DC2626;
+  padding:16px;
+  display:flex;
+  gap:20px;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap: wrap;
+}
+
+.nav a{ 
+  color:white; 
+  text-decoration:none;
+  transition: color 0.3s;
+}
+
+.nav a:hover {
+  color: #DC2626;
+}
+
+.logout-btn{
+  border:1px solid #DC2626;
+  padding:6px 14px;
+  color:white;
+  font-size:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.logout-btn:hover{
+  background:#DC2626;
+}
+
+.panel{
+  border:1px solid #DC2626;
+  border-radius:16px;
+  padding:24px;
+  margin:40px auto;
+  max-width:95%;
+  background:#050505;
+  overflow-x: auto;
+}
+
+.admin-table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.admin-table th{
+  background:#DC2626;
+  padding:12px 8px;
+  text-align:center;
+  font-size:14px;
+  border:1px solid #DC2626;
+  font-weight:bold;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.admin-table td{
+  padding:8px;
+  text-align:center;
+  border:1px solid #333;
+}
+
+.admin-table td:first-child{
+  background:#1a1a1a;
+  font-weight:bold;
+  text-align:left;
+  padding-left:16px;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+.btn{
+  border:1px solid #DC2626;
+  padding:8px 4px;
+  text-align:center;
+  cursor:pointer;
+  color:white;
+  transition:.3s;
+  font-size:11px;
+  display:block;
+  width:100%;
+}
+
+.btn:hover{
+  background:#DC2626;
+}
+
+.state{
+  font-size:10px;
+  margin-top:4px;
+  color:#ff6666;
+  text-transform: uppercase;
+}
+
+.state.revoked { color: #ef4444; }
+.state.access { color: #3b82f6; }
+.state.passed { color: #22c55e; }
+.state.eliminated { color: #787878; }
+
+.team-input-section{
+  margin-bottom:20px;
+  padding:16px;
+  background:#1a1a1a;
+  border-radius:8px;
+}
+
+.team-input{
+  background:#050505;
+  border:1px solid #DC2626;
+  color:white;
+  padding:8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size:12px;
+  width:200px;
+  margin-right:8px;
+}
+
+.team-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
+}
+
+.add-team-btn{
+  background:#DC2626;
+  border:none;
+  color:white;
+  padding:8px 16px;
+  cursor:pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size:12px;
+  transition:.3s;
+}
+
+.add-team-btn:hover{
+  background:white;
+  color:#DC2626;
+}
+
+.add-team-btn:disabled {
+  background:#444;
+  color:#888;
+  cursor:not-allowed;
+}
+
+.team-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+
+.team-tag{
+  background:#DC2626;
+  padding:4px 12px;
+  border-radius:4px;
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.remove-team{
+  cursor:pointer;
+  font-weight:bold;
+  opacity: 0.7;
+}
+
+.remove-team:hover{
+  opacity: 1;
+  color:#fff;
+}
+
+.loading{
+  text-align:center;
+  padding:40px;
+  color:#DC2626;
+}
+
+.loading-spinner {
+  border: 3px solid #333;
+  border-top: 3px solid #DC2626;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid #DC2626;
+  color: #DC2626;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .panel {
+    margin: 20px auto;
+    padding: 16px;
+  }
+  
+  .nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 5, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-panel {
+  background: #0b0b0b;
+  border: 1px solid #DC2626;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.2);
+}
+
+.modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.modal-input {
+  margin-top: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="nav" role="navigation" aria-label="Admin navigation">
+  <div class="flex gap-6 flex-wrap">
+    <a href="index.html">HOME</a>
+    <a href="rounds.html">ROUNDS</a>
+    <a href="admin.html">AUCTION ADMIN</a>
+    <a href="rules.html">RULES</a>
+    <a href="contact.html">REGISTER</a>
+  </div>
+
+  <button class="logout-btn" onclick="logout()" aria-label="Log out from admin panel">LOG OUT</button>
+</nav>
+
+<div class="panel">
+<h1 style="color:#DC2626;font-size:22px;margin-bottom:12px;">
+ROUNDS ACCESS PANEL
+</h1>
+
+<p class="text-gray-400 mb-4 text-sm">
+Click each cell to cycle through: REVOKED -> ACCESS -> PASSED -> ELIMINATED
+</p>
+
+<div id="loading" class="loading">
+  <div class="loading-spinner"></div>
+  <p>Loading Firebase data...</p>
+</div>
+
+<div id="error-display" class="error-message" style="display: none;">
+  <p id="error-text"></p>
+  <button onclick="window.location.reload()" class="add-team-btn mt-4">RETRY</button>
+</div>
+
+<div id="admin-content" style="display:none;">
+  <!-- Team Management Section -->
+  <div class="team-input-section">
+    <div style="margin-bottom:8px;">
+      <label for="new-team-input" style="color:#DC2626;font-size:12px;font-weight:bold;">ADD TEAM:</label>
+    </div>
+    <input 
+      type="text" 
+      id="new-team-input" 
+      class="team-input" 
+      placeholder="Enter team name (e.g., TEAM_A)" 
+      maxlength="20"
+      aria-label="New team name">
+    <button class="add-team-btn" onclick="addTeam()" id="add-team-button">+ ADD TEAM</button>
+    
+    <div class="team-list" id="team-list" role="list"></div>
+  </div>
+
+  <!-- Admin Grid -->
+  <div style="overflow-x:auto;">
+    <table class="admin-table" id="admin-grid">
+      <thead>
+        <tr>
+          <th scope="col">TEAM</th>
+          <th scope="col">ROUND 1</th>
+          <th scope="col">ROUND 2</th>
+          <th scope="col">ROUND 3</th>
+          <th scope="col">ROUND 4</th>
+        </tr>
+      </thead>
+      <tbody id="grid-body">
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- Load Firebase Config -->
+<script src="firebase-config.js"></script>
+
+<script>
+// ==========================================
+// MODAL HELPERS
+// ==========================================
+
+function showModal(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("admin-modal");
+    const msg = document.getElementById("admin-modal-message");
+    const input = document.getElementById("admin-modal-input");
+    const ok = document.getElementById("admin-modal-ok");
+    const cancel = document.getElementById("admin-modal-cancel");
+
+    msg.textContent = message;
+    input.style.display = "none";
+    cancel.style.display = "none";
+    modal.style.display = "flex";
+
+    const cleanup = () => {
+      modal.style.display = "none";
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+    };
+
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+function confirmAction(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("admin-modal");
+    const msg = document.getElementById("admin-modal-message");
+    const input = document.getElementById("admin-modal-input");
+    const ok = document.getElementById("admin-modal-ok");
+    const cancel = document.getElementById("admin-modal-cancel");
+
+    msg.textContent = message;
+    input.style.display = "none";
+    cancel.style.display = "inline-block";
+    modal.style.display = "flex";
+
+    const cleanup = () => {
+      modal.style.display = "none";
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+    };
+
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+function requestPassword() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("admin-modal");
+    const msg = document.getElementById("admin-modal-message");
+    const input = document.getElementById("admin-modal-input");
+    const ok = document.getElementById("admin-modal-ok");
+    const cancel = document.getElementById("admin-modal-cancel");
+
+    msg.textContent = "Enter admin password:";
+    input.value = "";
+    input.style.display = "block";
+    cancel.style.display = "inline-block";
+    modal.style.display = "flex";
+    input.focus();
+
+    const cleanup = () => {
+      modal.style.display = "none";
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+    };
+
+    const onOk = () => {
+      const val = input.value.trim();
+      cleanup();
+      resolve(val || null);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+// ==========================================
+// ADMIN ACCESS CHECK
+// ==========================================
+
+const ADMIN_SESSION_KEY = "capital_admin_session";
+
+async function checkAdminAuth() {
+  if(sessionStorage.getItem(ADMIN_SESSION_KEY) !== "true"){
+    const password = await requestPassword();
+    
+    if (!password) {
+      await showModal("Unauthorized access. Redirecting...");
+      window.location.href = "rounds.html";
+      return false;
+    }
+    
+    try {
+      const isValid = await validateAdminAccess(password);
+      if (!isValid) {
+        await showModal("Invalid password. Redirecting...");
+        window.location.href = "rounds.html";
+        return false;
+      }
+      sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
+      return true;
+    } catch (e) {
+      await showModal("Authentication error. Redirecting...");
+      window.location.href = "rounds.html";
+      return false;
+    }
+  }
+  return true;
+}
+
+const STATES = ["revoked","access","passed","eliminated"];
+
+function showError(message) {
+  document.getElementById("error-text").innerText = message;
+  document.getElementById("error-display").style.display = "block";
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("admin-content").style.display = "none";
+}
+
+function getTeamList(callback){
+  if (!database) {
+    showError("Firebase not initialized. Check your firebase-config.js");
+    return;
+  }
+  
+  database.ref('teamList').once('value').then((snapshot) => {
+    const teams = snapshot.val() || ["ALPHA", "BETA", "GAMMA"];
+    callback(teams);
+  }).catch((error) => {
+    console.error("Error fetching team list:", error);
+    showError("Failed to load team list. Check your connection.");
+  });
+}
+
+function setTeamList(teams){
+  if (!database) return;
+  database.ref('teamList').set(teams).catch((error) => {
+    console.error("Error saving team list:", error);
+    showModal("Failed to save team list. Please try again.");
+  });
+}
+
+function getTeamStates(callback){
+  if (!database) {
+    showError("Firebase not initialized.");
+    return;
+  }
+  
+  database.ref('teamStates').once('value').then((snapshot) => {
+    const states = snapshot.val() || {};
+    callback(states);
+  }).catch((error) => {
+    console.error("Error fetching team states:", error);
+    showError("Failed to load team states. Check your connection.");
+  });
+}
+
+function setTeamState(round, team, state){
+  if (!database) return;
+  database.ref(`teamStates/${round}/${team}`).set(state).catch((error) => {
+    console.error("Error updating team state:", error);
+    showModal("Failed to update state. Please try again.");
+  });
+}
+
+async function addTeam(){
+  const input = document.getElementById("new-team-input");
+  const button = document.getElementById("add-team-button");
+  const teamName = input.value.trim().toUpperCase();
+  
+  if(!teamName){
+    await showModal("Please enter a team name.");
+    return;
+  }
+  
+  if(!/^[A-Z0-9_]+$/.test(teamName)){
+    await showModal("Team name can only contain letters, numbers, and underscores.");
+    return;
+  }
+  
+  button.disabled = true;
+  
+  getTeamList((teams) => {
+    if(teams.includes(teamName)){
+      showModal("Team already exists.");
+      button.disabled = false;
+      return;
+    }
+    
+    if(teams.length >= 35){
+      showModal("Maximum 35 teams reached.");
+      button.disabled = false;
+      return;
+    }
+    
+    teams.push(teamName);
+    setTeamList(teams);
+    
+    const promises = [];
+    for(let r=1; r<=4; r++){
+      promises.push(
+        database.ref(`teamStates/${r}/${teamName}`).set("revoked")
+      );
+    }
+    
+    Promise.all(promises).then(() => {
+      input.value = "";
+      button.disabled = false;
+      render();
+    }).catch((error) => {
+      console.error("Error initializing new team:", error);
+      showModal("Error adding team. Please try again.");
+      button.disabled = false;
+    });
+  });
+}
+
+async function removeTeam(teamName){
+  const ok = await confirmAction(`Remove team ${teamName}? This will delete all their data.`);
+  if(!ok){
+    return;
+  }
+  
+  getTeamList((teams) => {
+    const index = teams.indexOf(teamName);
+    
+    if(index > -1){
+      teams.splice(index, 1);
+      setTeamList(teams);
+      
+      const promises = [];
+      for(let r=1; r<=4; r++){
+        promises.push(
+          database.ref(`teamStates/${r}/${teamName}`).remove()
+        );
+      }
+      
+      Promise.all(promises).then(() => {
+        render();
+      }).catch((error) => {
+        console.error("Error removing team:", error);
+        showModal("Error removing team. Please try again.");
+      });
+    }
+  });
+}
+
+function cycle(round, team){
+  getTeamStates((states) => {
+    const cur = states[round][team] || "revoked";
+    const next = STATES[(STATES.indexOf(cur)+1)%4];
+    setTeamState(round, team, next);
+    setTimeout(() => render(), 300);
+  });
+}
+
+function render(){
+  getTeamList((teams) => {
+    getTeamStates((states) => {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("error-display").style.display = "none";
+      document.getElementById("admin-content").style.display = "block";
+      
+      const teamListHTML = teams.map(team => 
+        `<div class="team-tag" role="listitem">
+          ${team}
+          <span class="remove-team" onclick="removeTeam('${team}')" role="button" aria-label="Remove ${team}" tabindex="0">x</span>
+        </div>`
+      ).join('');
+      document.getElementById("team-list").innerHTML = teamListHTML;
+      
+      let html = "";
+      
+      teams.forEach(team => {
+        html += `<tr>`;
+        html += `<td scope="row">${team}</td>`;
+        
+        for(let r=1; r<=4; r++){
+          const state = states[r][team] || "revoked";
+          html += `
+            <td>
+              <button onclick="cycle(${r},'${team}')" class="btn" aria-label="Change ${team} Round ${r} status. Current: ${state}">
+                <div class="state ${state}">${state}</div>
+              </button>
+            </td>
+          `;
+        }
+        
+        html += `</tr>`;
+      });
+      
+      document.getElementById("grid-body").innerHTML = html;
+    });
+  });
+}
+
+function logout(){
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  window.location.href = "rounds.html";
+}
+
+async function initialize() {
+  const isAuthorized = await checkAdminAuth();
+  if (!isAuthorized) return;
+  
+  if (!database) {
+    showError("Firebase not initialized. Please check your firebase-config.js file.");
+    return;
+  }
+  
+  getTeamList((teams) => {
+    if(teams.length === 0 || !teams){
+      setTeamList(["ALPHA", "BETA", "GAMMA"]);
+    }
+    render();
+  });
+}
+
+window.addEventListener("load", initialize);
+</script>
+
+<!-- Admin Modal -->
+<div id="admin-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+  <div class="modal-panel">
+    <h3 id="admin-modal-title" style="color:#DC2626;font-size:18px;margin-bottom:8px;">NOTICE</h3>
+    <p id="admin-modal-message" style="color:#cfcfcf;font-size:13px;"></p>
+    <input id="admin-modal-input" type="password" class="team-input modal-input" placeholder="Enter admin password" style="width:100%;display:none;" />
+    <div class="modal-actions">
+      <button id="admin-modal-cancel" class="btn" style="max-width:120px;">CANCEL</button>
+      <button id="admin-modal-ok" class="btn" style="max-width:120px;">OK</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

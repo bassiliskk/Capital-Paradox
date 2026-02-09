@@ -452,15 +452,15 @@ body { background-color: #050505; color: #FAFAFA; }
 
         // Get team from localStorage (persists across page reloads)
         function getTeamSession() {
-            return localStorage.getItem(TEAM_SESSION_KEY);
+            return sessionStorage.getItem(TEAM_SESSION_KEY);
         }
 
         function setTeamSession(team) {
-            localStorage.setItem(TEAM_SESSION_KEY, team);
+            sessionStorage.setItem(TEAM_SESSION_KEY, team);
         }
 
         function clearTeamSession() {
-            localStorage.removeItem(TEAM_SESSION_KEY);
+            sessionStorage.removeItem(TEAM_SESSION_KEY);
         }
 
         // Get decrypted rounds from localStorage
@@ -667,6 +667,7 @@ body { background-color: #050505; color: #FAFAFA; }
             lucide.createIcons();
         }
 
+
         function render(){
             const team = getTeamSession();
             updateLogoutUI(team);
@@ -702,8 +703,8 @@ body { background-color: #050505; color: #FAFAFA; }
             if (roundsLoading) roundsLoading.style.display = "flex";
             if (roundsContainer) roundsContainer.style.display = "none";
 
-            database.ref('teamStates').once('value').then((snapshot) => {
-                const state = snapshot.val() || {};
+            database.ref('teamStates').once('value').then((stateSnapshot) => {
+                const state = stateSnapshot.val() || {};
                 const decrypted = getDecrypted();
                 const container = document.getElementById("rounds-container");
                 if (roundsLoading) roundsLoading.style.display = "none";
@@ -744,6 +745,19 @@ body { background-color: #050505; color: #FAFAFA; }
                                     <p class="text-xs uppercase text-gray-500 mb-2">AVAILABLE ASSETS</p>
                                     <p class="text-gray-300 text-xs md:text-sm mb-2">${round.overview.availableAssets}</p>
                                     <p class="text-capital-red text-xs md:text-sm font-bold mt-2">${round.overview.warning}</p>
+                                </div>
+
+                                <div class="bg-gray-900/50 border border-capital-red/30 p-4 md:p-6 mt-6">
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p class="font-mono text-xs uppercase text-gray-500">Auction Portal</p>
+                                            <h3 class="font-display text-xl md:text-2xl text-white">GO TO THE AUCTION</h3>
+                                        </div>
+                                        <a href="auction.html" class="bg-capital-red text-white font-mono px-6 py-3 hover:bg-white hover:text-capital-red transition-all">
+                                            OPEN AUCTION
+                                        </a>
+                                    </div>
+                                    <p class="text-gray-400 text-xs mt-3">Access opens when the admin unlocks the auction.</p>
                                 </div>
 
                                 <!-- Read More Button -->
@@ -931,6 +945,14 @@ body { background-color: #050505; color: #FAFAFA; }
                 });
 
                 lucide.createIcons();
+                const codeInputs = container.querySelectorAll("input[id^='code-']");
+                codeInputs.forEach((input) => {
+                    if (input.dataset.uppercaseBound === "true") return;
+                    input.addEventListener("input", () => {
+                        input.value = input.value.toUpperCase();
+                    });
+                    input.dataset.uppercaseBound = "true";
+                });
             }).catch((error) => {
                 console.error("Firebase error:", error);
                 if (roundsLoading) roundsLoading.style.display = "none";

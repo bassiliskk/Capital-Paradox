@@ -185,6 +185,52 @@ body{
   gap:8px;
 }
 
+.budget-table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.budget-table th{
+  background:#111;
+  color:#DC2626;
+  padding:8px;
+  text-align:left;
+  font-size:12px;
+  border:1px solid #333;
+}
+
+.budget-table td{
+  padding:8px;
+  border:1px solid #333;
+  font-size:12px;
+}
+
+.budget-input{
+  background:#050505;
+  border:1px solid #DC2626;
+  color:white;
+  padding:6px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size:12px;
+  width:100%;
+}
+
+.budget-toggle{
+  transform: scale(1.1);
+}
+
+.budget-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+
+.budget-actions .btn{
+  max-width:180px;
+}
+
 .remove-team{
   cursor:pointer;
   font-weight:bold;
@@ -279,6 +325,7 @@ body{
   <div class="flex gap-6 flex-wrap">
     <a href="index.html">HOME</a>
     <a href="rounds.html">ROUNDS</a>
+    <a href="admin-rounds.html">ROUNDS ADMIN</a>
     <a href="rules.html">RULES</a>
     <a href="contact.html">REGISTER</a>
   </div>
@@ -286,14 +333,10 @@ body{
   <button class="logout-btn" onclick="logout()" aria-label="Log out from admin panel">LOG OUT</button>
 </nav>
 
-<div class="panel">
-<h1 style="color:#DC2626;font-size:22px;margin-bottom:12px;">
-ADMIN CONTROL PANEL
-</h1>
-
-<p class="text-gray-400 mb-4 text-sm">
-Click each cell to cycle through: REVOKED -> ACCESS -> PASSED -> ELIMINATED
-</p>
+  <div class="panel">
+  <h1 style="color:#DC2626;font-size:22px;margin-bottom:12px;">
+  ADMIN CONTROL PANEL
+  </h1>
 
 <div id="loading" class="loading">
   <div class="loading-spinner"></div>
@@ -306,38 +349,105 @@ Click each cell to cycle through: REVOKED -> ACCESS -> PASSED -> ELIMINATED
 </div>
 
 <div id="admin-content" style="display:none;">
-  <!-- Team Management Section -->
-  <div class="team-input-section">
-    <div style="margin-bottom:8px;">
-      <label for="new-team-input" style="color:#DC2626;font-size:12px;font-weight:bold;">ADD TEAM:</label>
+  <!-- Auction Control Section -->
+  <div class="team-input-section" id="auction-control-section">
+    <div style="color:#DC2626;font-size:12px;font-weight:bold;margin-bottom:8px;">
+      AUCTION CONTROL
     </div>
-    <input 
-      type="text" 
-      id="new-team-input" 
-      class="team-input" 
-      placeholder="Enter team name (e.g., TEAM_A)" 
-      maxlength="20"
-      aria-label="New team name">
-    <button class="add-team-btn" onclick="addTeam()" id="add-team-button">+ ADD TEAM</button>
-    
-    <div class="team-list" id="team-list" role="list"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+      <div>
+        <p class="text-gray-400 text-xs">Auction status</p>
+        <p id="auction-status-label" class="text-white text-sm">LOADING...</p>
+      </div>
+      <div>
+        <button class="add-team-btn" onclick="openAuction()" id="auction-open-btn">OPEN AUCTION</button>
+      </div>
+      <div>
+        <button class="btn" onclick="closeAuction()" id="auction-close-btn">CLOSE AUCTION</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Admin Grid -->
-  <div style="overflow-x:auto;">
-    <table class="admin-table" id="admin-grid">
-      <thead>
-        <tr>
-          <th scope="col">TEAM</th>
-          <th scope="col">ROUND 1</th>
-          <th scope="col">ROUND 2</th>
-          <th scope="col">ROUND 3</th>
-          <th scope="col">ROUND 4</th>
-        </tr>
-      </thead>
-      <tbody id="grid-body">
-      </tbody>
-    </table>
+  <!-- Auction Budget Settings -->
+  <div class="team-input-section" id="budget-section">
+    <div style="color:#DC2626;font-size:12px;font-weight:bold;margin-bottom:8px;">
+      AUCTION SETTINGS (ACTUAL VALUES)
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px;">
+      <div style="min-width:220px;flex:1;">
+        <label for="auction-search" style="color:#DC2626;font-size:11px;display:block;margin-bottom:6px;">
+          SEARCH ITEMS
+        </label>
+        <input 
+          type="text"
+          id="auction-search"
+          class="budget-input"
+          placeholder="Search by item name or number">
+      </div>
+      <div style="min-width:180px;">
+        <label for="auction-category" style="color:#DC2626;font-size:11px;display:block;margin-bottom:6px;">
+          CATEGORY FILTER
+        </label>
+        <select id="auction-category" class="budget-input">
+          <option value="all">ALL</option>
+          <option value="Antiques">ANTIQUES</option>
+          <option value="Stocks">STOCKS</option>
+          <option value="Goods">GOODS</option>
+        </select>
+      </div>
+      <div style="min-width:200px;">
+        <label for="auction-winner-bulk" style="color:#DC2626;font-size:11px;display:block;margin-bottom:6px;">
+          BULK WINNER (NEXT DISPLAYED)
+        </label>
+        <input id="auction-winner-bulk" class="budget-input" list="team-options" placeholder="Search team..." />
+      </div>
+      <div style="min-width:120px;">
+        <label for="auction-winner-count" style="color:#DC2626;font-size:11px;display:block;margin-bottom:6px;">
+          COUNT
+        </label>
+        <input id="auction-winner-count" type="number" min="1" step="1" value="1" class="budget-input" />
+      </div>
+      <div style="min-width:160px;margin-top:18px;">
+        <button class="btn" onclick="assignWinnerNext()">ASSIGN WINNER</button>
+      </div>
+      <div style="min-width:160px;display:flex;align-items:center;gap:8px;margin-top:18px;">
+        <input type="checkbox" id="auction-display-only" class="budget-toggle" />
+        <label for="auction-display-only" style="color:#DC2626;font-size:11px;">DISPLAYED ONLY</label>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+      <div style="min-width:220px;flex:1;">
+        <label for="budget-total-input" style="color:#DC2626;font-size:11px;display:block;margin-bottom:6px;">
+          TOTAL CAPITAL
+        </label>
+        <input 
+          type="number"
+          id="budget-total-input"
+          class="budget-input"
+          min="0"
+          step="1"
+          aria-label="Total capital for round one">
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div style="color:#DC2626;font-size:11px;margin-bottom:6px;">
+        ITEM LIST (VISIBLE TO TEAMS)
+      </div>
+      <div id="budget-items-container"></div>
+      <datalist id="team-options"></datalist>
+      <div class="budget-actions">
+        <button class="add-team-btn" onclick="addBudgetItem()">+ ADD ITEM</button>
+        <button class="btn" onclick="revealAllItems()">REVEAL ALL ACTUALS</button>
+        <button class="btn" onclick="hideAllItems()">HIDE ALL ACTUALS</button>
+        <button class="btn" onclick="displayNextItem()">DISPLAY NEXT</button>
+        <button class="btn" onclick="revealNextItem()">REVEAL NEXT</button>
+        <button class="btn" onclick="hideAllDisplayedItems()">HIDE ALL ITEMS</button>
+      </div>
+      <p class="text-gray-400 text-xs mt-2">Changes save automatically.</p>
+    </div>
   </div>
 </div>
 </div>
@@ -492,6 +602,19 @@ async function checkAdminAuth() {
 }
 
 const STATES = ["revoked","access","passed","eliminated"];
+const AUCTION_CONFIG_PATH = "auctionConfig";
+const AUCTION_ITEMS_PATH = "auctionItems";
+const AUCTION_STATUS_PATH = "auctionStatus";
+const AUCTION_BIDS_PATH = "auctionBids";
+let budgetState = { totalCapital: 100000 };
+let auctionItemsState = {};
+let budgetSaveTimer = null;
+let teamListCache = [];
+let auctionFilterState = {
+  search: "",
+  category: "all",
+  displayedOnly: false
+};
 
 // ==========================================
 // FIREBASE DATABASE FUNCTIONS
@@ -542,12 +665,498 @@ function getTeamStates(callback){
   });
 }
 
-function setTeamState(round, team, state){
+function openAuction() {
   if (!database) return;
-  database.ref(`teamStates/${round}/${team}`).set(state).catch((error) => {
-    console.error("Error updating team state:", error);
-    showModal("Failed to update state. Please try again.");
+  database.ref(AUCTION_STATUS_PATH).set("open").catch((error) => {
+    console.error("Error opening auction:", error);
+    showModal("Failed to open auction.");
   });
+}
+
+function closeAuction() {
+  if (!database) return;
+  database.ref(AUCTION_STATUS_PATH).set("closed").catch((error) => {
+    console.error("Error closing auction:", error);
+    showModal("Failed to close auction.");
+  });
+}
+
+function listenAuctionStatus() {
+  if (!database) return;
+  database.ref(AUCTION_STATUS_PATH).on("value", (snapshot) => {
+    const raw = snapshot.val();
+    const status = raw || "closed";
+    const label = document.getElementById("auction-status-label");
+    const openBtn = document.getElementById("auction-open-btn");
+    const closeBtn = document.getElementById("auction-close-btn");
+    if (label) label.textContent = status.toUpperCase();
+    if (openBtn) openBtn.disabled = status === "open";
+    if (closeBtn) closeBtn.disabled = status === "closed";
+    if (!raw) {
+      database.ref(AUCTION_STATUS_PATH).set("closed");
+    }
+  });
+}
+
+// ==========================================
+// AUCTION BUDGET CONFIGURATION
+// ==========================================
+
+const DEFAULT_AUCTION_ITEMS = [
+  { number: 1, category: "Antiques", name: "Ming Dynasty Vase", actualValue: 14000 },
+  { number: 2, category: "Antiques", name: "Samurai Sword", actualValue: 16000 },
+  { number: 3, category: "Antiques", name: "Royal Crown Replica", actualValue: 15000 },
+  { number: 4, category: "Antiques", name: "Pharaoh Statue", actualValue: 14500 },
+  { number: 5, category: "Antiques", name: "Historical Dossier", actualValue: 16500 },
+  { number: 6, category: "Antiques", name: "Vintage Typewriter", actualValue: 8000 },
+  { number: 7, category: "Antiques", name: "Victorian Pocket Watch", actualValue: 9000 },
+  { number: 8, category: "Antiques", name: "Ancient Scroll Replica", actualValue: 7000 },
+  { number: 9, category: "Antiques", name: "Gramophone", actualValue: 8500 },
+  { number: 10, category: "Antiques", name: "Brass Telescope", actualValue: 7500 },
+  { number: 11, category: "Antiques", name: "Roman Bronze Coin", actualValue: 6000 },
+  { number: 12, category: "Antiques", name: "Old Globe Map", actualValue: 11000 },
+  { number: 13, category: "Antiques", name: "Medieval Shield", actualValue: 12000 },
+  { number: 14, category: "Antiques", name: "Buddha Sculpture", actualValue: 13000 },
+  { number: 15, category: "Antiques", name: "Gandhi Glasses", actualValue: 18000 },
+  { number: 16, category: "Stocks", name: "Titanic Shipping", actualValue: 17000 },
+  { number: 17, category: "Stocks", name: "Vintage Rail Bonds", actualValue: 14000 },
+  { number: 18, category: "Stocks", name: "Dot-Com Stock", actualValue: 16000 },
+  { number: 19, category: "Stocks", name: "Old Coal Co.", actualValue: 13500 },
+  { number: 20, category: "Stocks", name: "Government Bond", actualValue: 10000 },
+  { number: 21, category: "Stocks", name: "Blue-Chip Reliant", actualValue: 13000 },
+  { number: 22, category: "Stocks", name: "Traditional Bank", actualValue: 12500 },
+  { number: 23, category: "Stocks", name: "FMCG Stock", actualValue: 11500 },
+  { number: 24, category: "Stocks", name: "Green Energy", actualValue: 15000 },
+  { number: 25, category: "Stocks", name: "AI Tech", actualValue: 17500 },
+  { number: 26, category: "Stocks", name: "Space Startup", actualValue: 19000 },
+  { number: 27, category: "Stocks", name: "Crypto NeoCoin", actualValue: 18000 },
+  { number: 28, category: "Goods", name: "Luxury Wine", actualValue: 14000 },
+  { number: 29, category: "Goods", name: "Antique Furniture", actualValue: 13500 },
+  { number: 30, category: "Goods", name: "Vintage Car Model", actualValue: 15000 },
+  { number: 31, category: "Goods", name: "Ornamental Sword", actualValue: 12000 },
+  { number: 32, category: "Goods", name: "Silk Bundle", actualValue: 9500 },
+  { number: 33, category: "Goods", name: "Ancient Spices", actualValue: 8500 },
+  { number: 34, category: "Goods", name: "Copper Bars", actualValue: 10000 },
+  { number: 35, category: "Goods", name: "Artisan Pottery", actualValue: 7500 },
+  { number: 36, category: "Goods", name: "Gold Bar", actualValue: 18500 },
+  { number: 37, category: "Goods", name: "Rare Gemstones", actualValue: 17000 },
+  { number: 38, category: "Goods", name: "Silver Bullion", actualValue: 14500 },
+  { number: 39, category: "Goods", name: "Energy Battery", actualValue: 16000 },
+  { number: 40, category: "Goods", name: "Premium Artwork", actualValue: 15500 }
+];
+
+function normalizeBudgetState(data) {
+  const raw = data || {};
+  const totalCapital = Number(raw.totalCapital);
+  return {
+    totalCapital: Number.isFinite(totalCapital) ? totalCapital : 100000
+  };
+}
+
+function normalizeAuctionItems(data) {
+  const raw = data || {};
+  const items = {};
+
+  Object.keys(raw).forEach((id) => {
+    const item = raw[id] || {};
+    items[id] = {
+      number: Number(item.number) || 0,
+      category: typeof item.category === "string" ? item.category : "Antiques",
+      name: typeof item.name === "string" ? item.name : "Unnamed Item",
+      actualValue: Number(item.actualValue) || 0,
+      display: item.display !== false,
+      reveal: item.reveal === true,
+      winnerTeam: typeof item.winnerTeam === "string" ? item.winnerTeam : "",
+      displayedAt: Number(item.displayedAt) || 0
+    };
+  });
+
+  return items;
+}
+
+function scheduleBudgetSave() {
+  if (!database) return;
+  clearTimeout(budgetSaveTimer);
+  budgetSaveTimer = setTimeout(() => {
+    Promise.all([
+      database.ref(AUCTION_CONFIG_PATH).set(budgetState),
+      database.ref(AUCTION_ITEMS_PATH).set(auctionItemsState)
+    ]).catch((error) => {
+      console.error("Error saving auction config:", error);
+      showModal("Failed to save auction settings. Please try again.");
+    });
+  }, 400);
+}
+
+function renderBudgetSection() {
+  const totalInput = document.getElementById("budget-total-input");
+  const container = document.getElementById("budget-items-container");
+  const searchInput = document.getElementById("auction-search");
+  const categorySelect = document.getElementById("auction-category");
+  const displayOnlyToggle = document.getElementById("auction-display-only");
+  const bulkWinnerSelect = document.getElementById("auction-winner-bulk");
+  const bulkWinnerCount = document.getElementById("auction-winner-count");
+  if (!totalInput || !container) return;
+
+  totalInput.value = budgetState.totalCapital;
+  if (searchInput) searchInput.value = auctionFilterState.search;
+  if (categorySelect) categorySelect.value = auctionFilterState.category;
+  if (displayOnlyToggle) displayOnlyToggle.checked = auctionFilterState.displayedOnly;
+  const datalist = document.getElementById("team-options");
+  if (datalist) {
+    datalist.innerHTML = teamListCache.map(team => `<option value="${team}"></option>`).join("");
+  }
+  if (bulkWinnerCount && !bulkWinnerCount.value) {
+    bulkWinnerCount.value = "1";
+  }
+
+  const itemIds = Object.keys(auctionItemsState).sort((a, b) => {
+    const aNum = auctionItemsState[a].number || 0;
+    const bNum = auctionItemsState[b].number || 0;
+    return aNum - bNum;
+  });
+  const filteredIds = itemIds.filter((id) => {
+    const item = auctionItemsState[id];
+    if (!item) return false;
+    const search = auctionFilterState.search.trim().toLowerCase();
+    const matchesSearch = !search ||
+      item.name.toLowerCase().includes(search) ||
+      String(item.number).includes(search);
+    const matchesCategory = auctionFilterState.category === "all" || item.category === auctionFilterState.category;
+    const matchesDisplay = !auctionFilterState.displayedOnly || item.display === true;
+    return matchesSearch && matchesCategory && matchesDisplay;
+  });
+
+  if (filteredIds.length === 0) {
+    container.innerHTML = `<div class="text-gray-400 text-xs">No items added yet.</div>`;
+  } else {
+    const rows = filteredIds.map((id) => {
+      const item = auctionItemsState[id];
+      const winnerValue = item.winnerTeam ? item.winnerTeam : "";
+      return `
+        <tr>
+          <td>
+            <button class="btn" data-budget-display="${id}">${item.display ? "DISPLAYED" : "HIDDEN"}</button>
+          </td>
+          <td>
+            <input type="text" class="budget-input" data-budget-category="${id}" value="${item.category.replace(/"/g, '&quot;')}" aria-label="Item category">
+          </td>
+          <td>
+            <input type="text" class="budget-input" data-budget-name="${id}" value="${item.name.replace(/"/g, '&quot;')}" aria-label="Item name">
+          </td>
+          <td>
+            <input type="number" class="budget-input" data-budget-actual="${id}" value="${item.actualValue}" min="0" step="1" aria-label="Actual value">
+          </td>
+          <td>
+            <input class="budget-input" data-budget-winner="${id}" value="${winnerValue.replace(/"/g, '&quot;')}" list="team-options" placeholder="Search team..." aria-label="Winning team">
+          </td>
+          <td>
+            <input type="checkbox" class="budget-toggle" data-budget-reveal="${id}" ${item.reveal ? "checked" : ""} aria-label="Reveal actual value for ${item.name}">
+          </td>
+          <td>
+            <button class="btn" data-budget-reset="${id}" aria-label="Reset bids for ${item.name}">RESET BIDS</button>
+          </td>
+          <td>
+            <button class="btn" data-budget-remove="${id}" aria-label="Remove item ${item.name}">REMOVE</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    container.innerHTML = `
+      <table class="budget-table">
+        <thead>
+          <tr>
+            <th>DISPLAY</th>
+            <th>CATEGORY</th>
+            <th>ITEM NAME</th>
+            <th>ACTUAL VALUE</th>
+            <th>WINNER</th>
+            <th>REVEAL</th>
+            <th>RESET</th>
+            <th>REMOVE</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    `;
+  }
+
+  totalInput.oninput = () => {
+    const val = Number(totalInput.value);
+    budgetState.totalCapital = Number.isFinite(val) ? val : 0;
+    scheduleBudgetSave();
+  };
+
+  if (searchInput) {
+    searchInput.oninput = () => {
+      auctionFilterState.search = searchInput.value || "";
+      renderBudgetSection();
+    };
+  }
+
+  if (categorySelect) {
+    categorySelect.onchange = () => {
+      auctionFilterState.category = categorySelect.value || "all";
+      renderBudgetSection();
+    };
+  }
+
+  if (displayOnlyToggle) {
+    displayOnlyToggle.onchange = () => {
+      auctionFilterState.displayedOnly = displayOnlyToggle.checked;
+      renderBudgetSection();
+    };
+  }
+
+  container.querySelectorAll("[data-budget-name]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = input.getAttribute("data-budget-name");
+      if (!auctionItemsState[id]) return;
+      auctionItemsState[id].name = input.value.trim() || "Unnamed Item";
+      scheduleBudgetSave();
+    });
+  });
+
+  container.querySelectorAll("[data-budget-category]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = input.getAttribute("data-budget-category");
+      if (!auctionItemsState[id]) return;
+      auctionItemsState[id].category = input.value.trim() || "Antiques";
+      scheduleBudgetSave();
+    });
+  });
+
+  container.querySelectorAll("[data-budget-actual]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = input.getAttribute("data-budget-actual");
+      if (!auctionItemsState[id]) return;
+      const val = Number(input.value);
+      auctionItemsState[id].actualValue = Number.isFinite(val) ? val : 0;
+      scheduleBudgetSave();
+    });
+  });
+
+  container.querySelectorAll("[data-budget-display]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.getAttribute("data-budget-display");
+      if (!auctionItemsState[id]) return;
+      const nextDisplay = !auctionItemsState[id].display;
+      auctionItemsState[id].display = nextDisplay;
+      if (nextDisplay) {
+        auctionItemsState[id].displayedAt = Date.now();
+      }
+      renderBudgetSection();
+      scheduleBudgetSave();
+    });
+  });
+
+  container.querySelectorAll("[data-budget-winner]").forEach((input) => {
+    const id = input.getAttribute("data-budget-winner");
+    if (auctionItemsState[id]) {
+      input.value = auctionItemsState[id].winnerTeam || "";
+      input.dataset.prev = auctionItemsState[id].winnerTeam || "";
+    }
+    input.addEventListener("change", () => {
+      if (!auctionItemsState[id]) return;
+      const value = (input.value || "").trim().toUpperCase();
+      if (!value) {
+        auctionItemsState[id].winnerTeam = "";
+        input.dataset.prev = "";
+        scheduleBudgetSave();
+        return;
+      }
+      if (!teamListCache.includes(value)) {
+        showModal("Team not found. Please select a valid team.");
+        input.value = input.dataset.prev || "";
+        return;
+      }
+      auctionItemsState[id].winnerTeam = value;
+      input.dataset.prev = value;
+      scheduleBudgetSave();
+    });
+  });
+
+  container.querySelectorAll("[data-budget-reveal]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const id = input.getAttribute("data-budget-reveal");
+      if (!auctionItemsState[id]) return;
+      auctionItemsState[id].reveal = input.checked;
+      scheduleBudgetSave();
+    });
+  });
+
+  container.querySelectorAll("[data-budget-remove]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.getAttribute("data-budget-remove");
+      if (!auctionItemsState[id]) return;
+      delete auctionItemsState[id];
+      renderBudgetSection();
+      scheduleBudgetSave();
+    });
+  });
+
+  container.querySelectorAll("[data-budget-reset]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.getAttribute("data-budget-reset");
+      if (!id) return;
+      const ok = await confirmAction("Reset all bids for this item?");
+      if (!ok) return;
+      if (!database) return;
+      const updates = {};
+      teamListCache.forEach((team) => {
+        updates[`${AUCTION_BIDS_PATH}/${team}/${id}`] = null;
+      });
+      database.ref().update(updates).catch((error) => {
+        console.error("Error resetting bids:", error);
+        showModal("Failed to reset bids.");
+      });
+    });
+  });
+}
+
+function loadAuctionConfig() {
+  if (!database) return;
+  Promise.all([
+    database.ref(AUCTION_CONFIG_PATH).once("value"),
+    database.ref(AUCTION_ITEMS_PATH).once("value")
+  ]).then(([configSnap, itemsSnap]) => {
+    budgetState = normalizeBudgetState(configSnap.val());
+    auctionItemsState = normalizeAuctionItems(itemsSnap.val());
+
+    if (!itemsSnap.exists() || Object.keys(auctionItemsState).length === 0) {
+      auctionItemsState = {};
+      DEFAULT_AUCTION_ITEMS.forEach((item) => {
+        const id = `item_${item.number}`;
+        auctionItemsState[id] = {
+          number: item.number,
+          category: item.category,
+          name: item.name,
+          actualValue: item.actualValue,
+          display: true,
+          reveal: false,
+          winnerTeam: "",
+          displayedAt: Date.now()
+        };
+      });
+    }
+
+    renderBudgetSection();
+
+    if (!configSnap.exists() || !itemsSnap.exists()) {
+      scheduleBudgetSave();
+    }
+  }).catch((error) => {
+    console.error("Error loading auction config:", error);
+    showModal("Failed to load auction settings. Please refresh.");
+  });
+}
+
+function addBudgetItem() {
+  const maxNumber = Object.values(auctionItemsState).reduce((max, item) => Math.max(max, item.number || 0), 0);
+  const number = maxNumber + 1;
+  const id = `item_${number}_${Date.now()}`;
+  auctionItemsState[id] = {
+    number,
+    category: "Antiques",
+    name: "New Item",
+    actualValue: 0,
+    display: true,
+    reveal: false
+  };
+  renderBudgetSection();
+  scheduleBudgetSave();
+}
+
+function revealAllItems() {
+  Object.keys(auctionItemsState).forEach((id) => {
+    auctionItemsState[id].reveal = true;
+  });
+  renderBudgetSection();
+  scheduleBudgetSave();
+}
+
+function hideAllItems() {
+  Object.keys(auctionItemsState).forEach((id) => {
+    auctionItemsState[id].reveal = false;
+  });
+  renderBudgetSection();
+  scheduleBudgetSave();
+}
+
+function hideAllDisplayedItems() {
+  Object.keys(auctionItemsState).forEach((id) => {
+    auctionItemsState[id].display = false;
+    auctionItemsState[id].displayedAt = 0;
+  });
+  renderBudgetSection();
+  scheduleBudgetSave();
+}
+
+function displayNextItem() {
+  const nextId = Object.keys(auctionItemsState)
+    .sort((a, b) => (auctionItemsState[a].number || 0) - (auctionItemsState[b].number || 0))
+    .find((id) => auctionItemsState[id] && auctionItemsState[id].display === false);
+  if (!nextId) {
+    showModal("All items are already displayed.");
+    return;
+  }
+  auctionItemsState[nextId].display = true;
+  auctionItemsState[nextId].displayedAt = Date.now();
+  renderBudgetSection();
+  scheduleBudgetSave();
+}
+
+function revealNextItem() {
+  const nextId = Object.keys(auctionItemsState)
+    .sort((a, b) => (auctionItemsState[a].number || 0) - (auctionItemsState[b].number || 0))
+    .find((id) => {
+      const item = auctionItemsState[id];
+      return item && item.display === true && item.reveal === false;
+    });
+  if (!nextId) {
+    showModal("No displayed items left to reveal.");
+    return;
+  }
+  auctionItemsState[nextId].reveal = true;
+  renderBudgetSection();
+  scheduleBudgetSave();
+}
+
+function assignWinnerNext() {
+  const select = document.getElementById("auction-winner-bulk");
+  const countInput = document.getElementById("auction-winner-count");
+  if (!select || !countInput) return;
+  const winner = (select.value || "").trim().toUpperCase();
+  const count = Math.max(1, Number(countInput.value) || 1);
+  if (!winner) {
+    showModal("Select a winner first.");
+    return;
+  }
+  if (!teamListCache.includes(winner)) {
+    showModal("Team not found. Please select a valid team.");
+    return;
+  }
+  const ids = Object.keys(auctionItemsState)
+    .sort((a, b) => (auctionItemsState[a].number || 0) - (auctionItemsState[b].number || 0))
+    .filter((id) => {
+      const item = auctionItemsState[id];
+      return item && item.display === true && !item.winnerTeam;
+    })
+    .slice(0, count);
+
+  if (ids.length === 0) {
+    showModal("No displayed items without winners.");
+    return;
+  }
+
+  ids.forEach((id) => {
+    auctionItemsState[id].winnerTeam = winner;
+  });
+  renderBudgetSection();
+  scheduleBudgetSave();
 }
 
 function initializeStates(){
@@ -586,153 +1195,18 @@ function initializeStates(){
 }
 
 // ==========================================
-// TEAM MANAGEMENT
-// ==========================================
-
-async function addTeam(){
-  const input = document.getElementById("new-team-input");
-  const button = document.getElementById("add-team-button");
-  const teamName = input.value.trim().toUpperCase();
-  
-  if(!teamName){
-    await showModal("Please enter a team name.");
-    return;
-  }
-  
-  if(!/^[A-Z0-9_]+$/.test(teamName)){
-    await showModal("Team name can only contain letters, numbers, and underscores.");
-    return;
-  }
-  
-  // Disable button to prevent double-clicks
-  button.disabled = true;
-  
-  getTeamList((teams) => {
-    if(teams.includes(teamName)){
-      showModal("Team already exists.");
-      button.disabled = false;
-      return;
-    }
-    
-    if(teams.length >= 35){
-      showModal("Maximum 35 teams reached.");
-      button.disabled = false;
-      return;
-    }
-    
-    teams.push(teamName);
-    setTeamList(teams);
-    
-    // Initialize states for new team
-    const promises = [];
-    for(let r=1; r<=4; r++){
-      promises.push(
-        database.ref(`teamStates/${r}/${teamName}`).set("revoked")
-      );
-    }
-    
-    Promise.all(promises).then(() => {
-      input.value = "";
-      button.disabled = false;
-      render();
-    }).catch((error) => {
-      console.error("Error initializing new team:", error);
-      showModal("Error adding team. Please try again.");
-      button.disabled = false;
-    });
-  });
-}
-
-async function removeTeam(teamName){
-  const ok = await confirmAction(`Remove team ${teamName}? This will delete all their data.`);
-  if(!ok){
-    return;
-  }
-  
-  getTeamList((teams) => {
-    const index = teams.indexOf(teamName);
-    
-    if(index > -1){
-      teams.splice(index, 1);
-      setTeamList(teams);
-      
-      // Remove from states
-      const promises = [];
-      for(let r=1; r<=4; r++){
-        promises.push(
-          database.ref(`teamStates/${r}/${teamName}`).remove()
-        );
-      }
-      
-      Promise.all(promises).then(() => {
-        render();
-      }).catch((error) => {
-        console.error("Error removing team:", error);
-        showModal("Error removing team. Please try again.");
-      });
-    }
-  });
-}
-
-// ==========================================
-// STATE MANAGEMENT
-// ==========================================
-
-function cycle(round, team){
-  getTeamStates((states) => {
-    const cur = states[round][team] || "revoked";
-    const next = STATES[(STATES.indexOf(cur)+1)%4];
-    setTeamState(round, team, next);
-    
-    // Update UI immediately for better UX
-    setTimeout(() => render(), 300);
-  });
-}
-
-// ==========================================
 // RENDER
 // ==========================================
 
 function render(){
   getTeamList((teams) => {
-    getTeamStates((states) => {
-      // Hide loading, show content
-      document.getElementById("loading").style.display = "none";
-      document.getElementById("error-display").style.display = "none";
-      document.getElementById("admin-content").style.display = "block";
-      
-      // Render team list
-      const teamListHTML = teams.map(team => 
-        `<div class="team-tag" role="listitem">
-          ${team}
-          <span class="remove-team" onclick="removeTeam('${team}')" role="button" aria-label="Remove ${team}" tabindex="0">x</span>
-        </div>`
-      ).join('');
-      document.getElementById("team-list").innerHTML = teamListHTML;
-      
-      // Render grid
-      let html = "";
-      
-      teams.forEach(team => {
-        html += `<tr>`;
-        html += `<td scope="row">${team}</td>`;
-        
-        for(let r=1; r<=4; r++){
-          const state = states[r][team] || "revoked";
-          html += `
-            <td>
-              <button onclick="cycle(${r},'${team}')" class="btn" aria-label="Change ${team} Round ${r} status. Current: ${state}">
-                <div class="state ${state}">${state}</div>
-              </button>
-            </td>
-          `;
-        }
-        
-        html += `</tr>`;
-      });
-      
-      document.getElementById("grid-body").innerHTML = html;
-    });
+    teamListCache = teams || [];
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("error-display").style.display = "none";
+    document.getElementById("admin-content").style.display = "block";
+
+    renderBudgetSection();
   });
 }
 
@@ -755,13 +1229,16 @@ async function initialize() {
     showError("Firebase not initialized. Please check your firebase-config.js file.");
     return;
   }
+
+  listenAuctionStatus();
+  loadAuctionConfig();
   
-  // Initialize default teams if none exist
+  // Ensure team list exists
   getTeamList((teams) => {
     if(teams.length === 0 || !teams){
       setTeamList(["ALPHA", "BETA", "GAMMA"]);
     }
-    initializeStates();
+    render();
   });
 }
 
