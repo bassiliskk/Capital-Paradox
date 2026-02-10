@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -98,17 +98,41 @@
             100% { transform: rotate(360deg); }
         }
 
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
+        .shake {
+            animation: shake 0.5s;
         }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 9999;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            animation: slideIn 0.3s ease-out;
+            max-width: 90%;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.success { background: #22c55e; color: white; }
+        .toast.error { background: #ef4444; color: white; }
+        .toast.warning { background: #f59e0b; color: white; }
+        .toast.info { background: #3b82f6; color: white; }
+
+        .content-padding { padding-bottom: 80px; }
 
         @media (max-width: 768px) {
             .mobile-nav {
@@ -125,161 +149,135 @@
                 justify-content: space-between;
                 align-items: center;
             }
-            .content-padding { padding-bottom: 80px; }
         }
 
         @media (min-width: 769px) {
             .mobile-nav { display: none; }
         }
+
+        .capital-bar {
+            height: 8px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .capital-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #DC2626, #991B1B);
+            transition: width 0.3s ease;
+        }
+
+        .bid-locked {
+            position: relative;
+        }
+
+        .bid-locked::after {
+            content: '🔒';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
     </style>
 </head>
 <body class="font-body content-padding">
 
-    <!-- Desktop Navigation -->
-    <nav class="fixed top-0 w-full z-50 bg-void-black/95 backdrop-blur-md border-b border-capital-red/20" role="navigation" aria-label="Main navigation">
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-void-black/95 backdrop-blur-md border-b border-capital-red/20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <a href="index.html" class="flex items-center space-x-2" aria-label="CAPITAL Paradox Home">
-                    <span class="font-display text-3xl tracking-wider text-white">CAPITAL</span>
-                    <span class="font-script text-2xl text-capital-red -rotate-6">Paradox</span>
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <span class="font-display text-2xl tracking-wider text-white">CAPITAL</span>
+                    <span class="font-script text-xl text-capital-red -rotate-6">Paradox</span>
                 </a>
-                <div class="hidden md:flex space-x-8 font-mono text-sm tracking-widest">
-                    <a href="rounds.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">ROUNDS</a>
-                    <a href="auction.html" class="nav-link relative text-white py-2" aria-current="page">AUCTION</a>
-                    <a href="rules.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">RULES</a>
-                    <button id="team-logout" class="unlock-btn px-6 py-2 font-mono text-xs tracking-widest hidden" onclick="logoutTeam()">LOG OUT</button>
+                <div class="flex items-center gap-4">
+                    <a href="rounds.html" class="text-gray-400 hover:text-white font-mono text-xs">BACK TO ROUNDS</a>
+                    <button id="team-logout" class="hidden text-capital-red hover:text-white font-mono text-xs border border-capital-red px-4 py-2 hover:bg-capital-red transition-all">
+                        LOGOUT
+                    </button>
                 </div>
-                <button 
-                    class="md:hidden text-white" 
-                    onclick="toggleMobileMenu()"
-                    aria-label="Toggle mobile menu"
-                    aria-expanded="false"
-                    id="mobile-menu-button">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
-            </div>
-        </div>
-        <div id="mobile-menu" class="hidden md:hidden bg-void-black border-b border-capital-red/20">
-            <div class="px-4 pt-2 pb-6 space-y-2 font-mono">
-                <a href="rounds.html" class="block py-2 text-gray-400 hover:text-white">ROUNDS</a>
-                <a href="auction.html" class="block py-2 text-white">AUCTION</a>
-                <a href="rules.html" class="block py-2 text-gray-400 hover:text-white">RULES</a>
-                <button id="team-logout-mobile" class="hidden w-full text-left py-2 text-capital-red hover:text-white" onclick="logoutTeam()">LOG OUT</button>
             </div>
         </div>
     </nav>
 
+    <!-- Loading Screen -->
+    <div id="auction-loading" class="fixed inset-0 bg-void-black flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-400 font-mono text-sm">LOADING AUCTION...</p>
+        </div>
+    </div>
+
     <!-- Team Login Screen -->
-    <div id="team-login-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[999]" style="display: none;">
-        <div class="border border-red-700 p-10 rounded-lg text-center max-w-md w-full mx-4">
-            <h2 class="text-2xl mb-4 font-display">TEAM ACCESS PORTAL</h2>
-            <label for="team-login-input" class="sr-only">Enter your team code</label>
-            <input 
-                id="team-login-input" 
-                class="code-input w-full p-4 rounded mb-4 font-mono" 
-                placeholder="ENTER TEAM CODE"
-                aria-label="Team login code"
-                autocomplete="off">
-            <button onclick="login()" class="unlock-btn w-full py-3 mb-6 font-mono tracking-wider">ACCESS</button>
-            <div class="flex flex-wrap justify-center gap-6 text-sm font-mono">
-                <a href="index.html" class="text-gray-400 hover:text-white transition-colors">HOME</a>
-                <a href="rounds.html" class="text-gray-400 hover:text-white transition-colors">ROUNDS</a>
-                <span class="text-capital-red">AUCTION</span>
+    <div id="team-login-screen" class="fixed inset-0 bg-void-black flex items-center justify-center z-40" style="display: none;">
+        <div class="border border-capital-red p-10 rounded-lg text-center max-w-md w-full mx-4">
+            <h2 class="font-display text-3xl mb-2">AUCTION ACCESS</h2>
+            <p class="text-gray-400 font-mono text-xs mb-6">TEAM AUTHENTICATION REQUIRED</p>
+            <input id="team-login-input" class="code-input w-full p-4 rounded mb-4 uppercase" placeholder="ENTER TEAM CODE">
+            <button onclick="loginTeam()" class="unlock-btn w-full py-3 font-mono tracking-wider">ACCESS AUCTION</button>
+            <div class="mt-6">
+                <a href="rounds.html" class="text-gray-500 hover:text-white font-mono text-xs">← Back to Rounds</a>
             </div>
         </div>
     </div>
 
     <!-- Auction Closed Screen -->
-    <div id="auction-closed-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[998]" style="display: none;" role="dialog" aria-labelledby="auction-closed-title">
-        <div class="text-center max-w-xl mx-4">
-            <div class="mb-8 flex justify-center">
-                <div class="relative">
-                    <div class="w-32 h-32 border-4 border-capital-red rounded-full flex items-center justify-center animate-pulse">
-                        <i data-lucide="lock" class="w-20 h-20 text-capital-red"></i>
-                    </div>
-                </div>
-            </div>
-
-            <h2 id="auction-closed-title" class="font-display text-5xl md:text-7xl text-capital-red mb-6 relative inline-block">
-                AUCTION LOCKED
-            </h2>
-
-            <p class="text-gray-400 font-mono text-sm mb-6">The auction is currently closed by admin. Stay ready.</p>
-            <button onclick="location.reload()" class="bg-capital-red text-white font-mono px-8 py-3 hover:bg-white hover:text-capital-red transition-all border border-capital-red">
-                REFRESH
-            </button>
-            <div class="mt-4">
-                <a href="rounds.html" class="border border-capital-red text-capital-red px-4 py-2 text-xs font-mono hover:bg-capital-red hover:text-white transition-all">
-                    BACK TO ROUNDS
-                </a>
+    <div id="auction-closed-screen" class="fixed inset-0 bg-void-black flex items-center justify-center z-30" style="display: none;">
+        <div class="text-center max-w-md mx-4">
+            <i data-lucide="lock" class="w-20 h-20 text-capital-red mx-auto mb-6"></i>
+            <h2 class="font-display text-4xl text-white mb-4">AUCTION CLOSED</h2>
+            <p class="text-gray-400 font-mono text-sm mb-8">The auction is currently not active. Please wait for the admin to open it.</p>
+            <button id="team-logout-closed" class="unlock-btn px-8 py-3 font-mono tracking-wider">LOGOUT</button>
+            <div class="mt-6">
+                <a href="rounds.html" class="text-gray-500 hover:text-white font-mono text-xs">← Back to Rounds</a>
             </div>
         </div>
     </div>
 
-    <!-- Loading Screen -->
-    <div id="auction-loading" class="min-h-screen flex items-center justify-center">
-        <div class="text-center">
-            <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="font-mono text-gray-400 text-sm">Connecting to auction...</p>
+    <!-- Main Auction Content -->
+    <div id="auction-header" class="pt-24 pb-6 px-4" style="display: none;">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <span class="font-mono text-capital-red text-xs tracking-widest">LIVE AUCTION</span>
+                    <h1 id="auction-team" class="font-display text-3xl md:text-5xl text-white mt-1">WELCOME, TEAM</h1>
+                </div>
+                <div class="text-right">
+                    <span class="font-mono text-xs text-gray-500 block">STATUS</span>
+                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></span>
+                    <span class="font-mono text-sm text-green-500">ACTIVE</span>
+                </div>
+            </div>
+
+            <!-- Capital Summary with Progress Bar -->
+            <div id="capital-summary" class="bg-black/60 border border-capital-red/30 rounded-lg p-4 md:p-6">
+                <!-- Filled by JavaScript -->
+            </div>
         </div>
     </div>
 
-    <!-- Header -->
-    <section class="pt-32 pb-12 grid-bg" id="auction-header" style="display: none;">
-        <div class="max-w-7xl mx-auto px-4">
-            <span class="font-mono text-capital-red text-sm tracking-widest">TIME VAULT AUCTION</span>
-            <h1 class="font-display text-5xl md:text-8xl text-white mt-2">THE AUCTION</h1>
-            <div class="flex flex-wrap items-center gap-4 mt-2">
-                <p id="auction-team" class="text-capital-red font-mono text-lg"></p>
-                <a href="rounds.html" class="border border-capital-red text-capital-red px-4 py-2 text-xs font-mono hover:bg-capital-red hover:text-white transition-all">
-                    BACK TO ROUNDS
-                </a>
+    <div id="auction-content" class="pb-12 px-4" style="display: none;">
+        <div class="max-w-6xl mx-auto">
+            <div id="auction-items" class="space-y-4">
+                <!-- Filled by JavaScript -->
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Auction Content -->
-    <section class="py-12 bg-void-black" id="auction-content" style="display: none;">
-        <div class="max-w-6xl mx-auto px-4 space-y-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-black/40 border border-gray-800 p-4 rounded">
-                    <p class="text-xs uppercase text-gray-500">TOTAL SPENT (WON)</p>
-                    <p id="summary-total-spent" class="text-white font-mono text-lg">-</p>
-                </div>
-                <div class="bg-black/40 border border-gray-800 p-4 rounded">
-                    <p class="text-xs uppercase text-gray-500">REMAINING CAPITAL</p>
-                    <p id="summary-remaining" class="text-white font-mono text-lg">-</p>
-                </div>
-                <div class="bg-black/40 border border-gray-800 p-4 rounded">
-                    <p class="text-xs uppercase text-gray-500">TOTAL PROFIT / LOSS</p>
-                    <p id="summary-profit" class="text-white font-mono text-lg">-</p>
-                    <p id="summary-hint" class="text-[10px] text-gray-500 mt-1">Pending actual reveal</p>
-                </div>
-            </div>
-
-            <div id="auction-items" class="space-y-4"></div>
-        </div>
-    </section>
-
-    <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-nav md:hidden" role="navigation" aria-label="Mobile navigation">
-        <a href="rounds.html" class="flex flex-col items-center text-gray-400 hover:text-white">
+    <!-- Mobile Bottom Nav -->
+    <div class="mobile-nav">
+        <a href="rounds.html" class="flex flex-col items-center text-gray-400">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
             <span class="text-[10px] mt-1 font-mono">BACK</span>
         </a>
-        <a href="auction.html" class="flex flex-col items-center text-capital-red">
-            <i data-lucide="hammer" class="w-5 h-5"></i>
-            <span class="text-[10px] mt-1 font-mono">AUCTION</span>
-        </a>
-        <a href="rules.html" class="flex flex-col items-center text-gray-400 hover:text-white">
-            <i data-lucide="arrow-right" class="w-5 h-5"></i>
-            <span class="text-[10px] mt-1 font-mono">RULES</span>
-        </a>
-    </nav>
-
-    <a href="rounds.html" class="md:hidden fixed bottom-20 right-4 z-[1002] bg-capital-red text-white font-mono text-[10px] px-3 py-2 rounded-full shadow-lg border border-capital-red/50">
-        ROUNDS
-    </a>
+        <button id="team-logout-mobile" class="hidden flex flex-col items-center text-capital-red">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">LOGOUT</span>
+        </button>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -287,43 +285,51 @@
     <script src="firebase-config.js"></script>
 
     <script>
-        const TEAM_SESSION_KEY = "capital_team_session";
-        const AUCTION_CONFIG_PATH = "auctionConfig";
-        const AUCTION_ITEMS_PATH = "auctionItems";
-        const AUCTION_BIDS_PATH = "auctionBids";
-        const AUCTION_STATUS_PATH = "auctionStatus";
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        const CONFIG = {
+            DEBOUNCE_DELAY: 800,
+            RENDER_DEBOUNCE: 100,
+            HIGH_BID_WARNING_THRESHOLD: 25,
+            OVERSPEND_WARNING_THRESHOLD: 90,
+            BID_LOCK_TIMEOUT: 30000, // 30 seconds after reveal
+            FIREBASE_PATHS: {
+                CONFIG: 'auctionConfig',
+                ITEMS: 'auctionItems',
+                STATUS: 'auctionStatus',
+                BIDS: 'auctionBids',
+                HISTORY: 'auctionHistory'
+            },
+            BID_STATUSES: {
+                PENDING: 'pending',
+                WON: 'won',
+                DIDNT_WIN: 'didnt_win',
+                LOCKED: 'locked'
+            }
+        };
 
+        // ==========================================
+        // STATE MANAGEMENT
+        // ==========================================
+        const TEAM_SESSION_KEY = "capital_team_session";
+        
         let auctionConfig = { totalCapital: 100000 };
         let auctionItems = [];
-        let auctionBids = {};
         let auctionStatus = "closed";
-        const readyFlags = { config: false, items: false, status: false };
+        let auctionBids = {};
+        
+        let readyFlags = { config: false, items: false, status: false };
+        let listeners = {};
         let bidSaveTimers = {};
+        let renderTimeout = null;
+        let bidBackups = {};
+        let bidCache = {};
+        let bidDirtyFlags = {};
 
-        const INR_FORMATTER = new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
-        });
-
-        function formatInr(value) {
-            const amount = Number(value) || 0;
-            try {
-                return INR_FORMATTER.format(amount);
-            } catch (e) {
-                return `₹${amount.toLocaleString('en-IN')}`;
-            }
-        }
-
-        function escapeHtml(value) {
-            return String(value)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
+        // ==========================================
+        // UTILITY FUNCTIONS
+        // ==========================================
         function getTeamSession() {
             return sessionStorage.getItem(TEAM_SESSION_KEY);
         }
@@ -336,84 +342,139 @@
             sessionStorage.removeItem(TEAM_SESSION_KEY);
         }
 
-        function login() {
-            const raw = document.getElementById("team-login-input").value.trim();
-            if (!raw) return;
-            const teamCode = raw.toUpperCase();
-            setTeamSession(teamCode);
-            startAuction();
+        function formatInr(amount) {
+            return Number(amount).toLocaleString('en-IN') + ' pts';
         }
 
-        function logoutTeam() {
-            clearTeamSession();
-            location.reload();
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            const button = document.getElementById('mobile-menu-button');
-            const isExpanded = button.getAttribute('aria-expanded') === 'true';
-            menu.classList.toggle('hidden');
-            button.setAttribute('aria-expanded', !isExpanded);
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
-        function normalizeAuctionConfig(data) {
-            const raw = data || {};
-            const totalCapital = Number(raw.totalCapital);
+        function safeFirebaseOperation(operation, fallback) {
+            try {
+                return operation();
+            } catch (error) {
+                console.error('Firebase operation failed:', error);
+                if (fallback) fallback();
+                showToast('⚠️ Connection issue. Please try again.', 'error');
+                return null;
+            }
+        }
+
+        // ==========================================
+        // DATA NORMALIZATION
+        // ==========================================
+        function normalizeAuctionConfig(raw) {
+            if (!raw) return { totalCapital: 100000 };
             return {
-                totalCapital: Number.isFinite(totalCapital) ? totalCapital : 100000
+                totalCapital: Number(raw.totalCapital) || 100000
             };
         }
 
-        function normalizeAuctionItems(data) {
-            const raw = data || {};
-            return Object.keys(raw).map((id) => {
-                const item = raw[id] || {};
-                return {
+        function normalizeAuctionItems(raw) {
+            if (!raw) return [];
+            return Object.entries(raw)
+                .map(([id, item]) => ({
                     id,
-                    number: Number(item.number) || 0,
-                    category: typeof item.category === "string" ? item.category : "Antiques",
-                    name: typeof item.name === "string" ? item.name : "Unnamed Item",
+                    number: item.number || '',
+                    name: item.name || 'Unknown Item',
+                    category: item.category || 'Uncategorized',
                     actualValue: Number(item.actualValue) || 0,
-                    display: item.display !== false,
+                    display: item.display === true,
                     reveal: item.reveal === true,
-                    winnerTeam: typeof item.winnerTeam === "string" ? item.winnerTeam : "",
-                    displayedAt: Number(item.displayedAt) || 0
-                };
-            }).sort((a, b) => {
-                if (a.display !== b.display) {
-                    return a.display ? -1 : 1;
-                }
-                const aTime = a.displayedAt || 0;
-                const bTime = b.displayedAt || 0;
-                if (aTime !== bTime) {
-                    return bTime - aTime;
-                }
-                return (a.number || 0) - (b.number || 0);
-            });
+                    winnerTeam: item.winnerTeam || null,
+                    displayedAt: item.displayedAt || 0,
+                    revealedAt: item.revealedAt || 0
+                }))
+                .filter(item => item.display)
+                .sort((a, b) => b.displayedAt - a.displayedAt);
         }
 
-        function normalizeAuctionBids(data) {
-            const raw = data || {};
+        function normalizeAuctionBids(raw) {
+            if (!raw) return {};
             const bids = {};
-            Object.keys(raw).forEach((id) => {
+            Object.keys(raw).forEach(id => {
                 const entry = raw[id] || {};
                 bids[id] = {
                     bid: Number(entry.bid) || 0,
-                    status: entry.status || "pending"
+                    status: entry.status || CONFIG.BID_STATUSES.PENDING,
+                    lockedAt: entry.lockedAt || null
                 };
             });
             return bids;
         }
 
+        // ==========================================
+        // BID LOCKING MECHANISM (Anti-Cheat)
+        // ==========================================
+        function shouldLockBid(item, bidEntry) {
+            if (!item.reveal) return false;
+            if (!item.revealedAt) return false;
+            
+            const timeSinceReveal = Date.now() - item.revealedAt;
+            return timeSinceReveal > CONFIG.BID_LOCK_TIMEOUT;
+        }
+
+        function lockBidIfNeeded(itemId, item, team) {
+            const entry = auctionBids[itemId];
+            if (!entry || entry.status === CONFIG.BID_STATUSES.LOCKED) return;
+            
+            if (shouldLockBid(item, entry)) {
+                const lockedBid = {
+                    ...entry,
+                    status: CONFIG.BID_STATUSES.LOCKED,
+                    lockedAt: Date.now()
+                };
+                
+                auctionBids[itemId] = lockedBid;
+                
+                database.ref(`${CONFIG.FIREBASE_PATHS.BIDS}/${team}/${itemId}`).update({
+                    status: CONFIG.BID_STATUSES.LOCKED,
+                    lockedAt: Date.now()
+                }).then(() => {
+                    showToast('🔒 Bid locked for ' + item.name, 'warning');
+                });
+            }
+        }
+
+        // ==========================================
+        // OUTCOME CALCULATION
+        // ==========================================
         function computeOutcome(item, team, entry) {
             let text = "PENDING";
             let cls = "text-white";
 
-            if (entry.status === "didnt_win") {
+            if (entry.status === CONFIG.BID_STATUSES.LOCKED) {
+                const diff = item.actualValue - entry.bid;
+                if (diff > 0) {
+                    text = `LOCKED - PROFIT ${formatInr(diff)}`;
+                    cls = "text-green-400";
+                } else if (diff < 0) {
+                    text = `LOCKED - LOSS ${formatInr(Math.abs(diff))}`;
+                    cls = "text-red-400";
+                } else {
+                    text = "LOCKED - BREAKEVEN";
+                    cls = "text-white";
+                }
+            } else if (entry.status === CONFIG.BID_STATUSES.DIDNT_WIN) {
                 text = "DIDN'T WIN";
                 cls = "text-gray-400";
-            } else if (entry.status === "won" && item.reveal) {
+            } else if (entry.status === CONFIG.BID_STATUSES.WON && item.reveal) {
                 const diff = item.actualValue - entry.bid;
                 if (diff > 0) {
                     text = `PROFIT ${formatInr(diff)}`;
@@ -425,7 +486,7 @@
                     text = "BREAKEVEN";
                     cls = "text-white";
                 }
-            } else if (entry.status === "won") {
+            } else if (entry.status === CONFIG.BID_STATUSES.WON) {
                 text = item.reveal ? "REVEALED" : "WON (REVEAL PENDING)";
                 cls = item.reveal ? "text-white" : "text-yellow-400";
             } else if (item.winnerTeam && item.winnerTeam !== team) {
@@ -436,36 +497,312 @@
             return { text, cls };
         }
 
+        // ==========================================
+        // POINTS SUMMARY
+        // ==========================================
+        function updateSummary() {
+            const team = getTeamSession();
+            if (!team) return;
+
+            const wonBids = Object.entries(auctionBids)
+                .filter(([id, b]) => b.status === CONFIG.BID_STATUSES.WON || b.status === CONFIG.BID_STATUSES.LOCKED);
+            
+            const totalSpent = wonBids.reduce((sum, [id, b]) => sum + b.bid, 0);
+            const remaining = auctionConfig.totalCapital - totalSpent;
+            const percentUsed = (totalSpent / auctionConfig.totalCapital) * 100;
+
+            let totalProfit = 0;
+            wonBids.forEach(([itemId, bid]) => {
+                const item = auctionItems.find(i => i.id === itemId);
+                if (item && item.reveal) {
+                    totalProfit += (item.actualValue - bid.bid);
+                }
+            });
+
+            const summaryEl = document.getElementById('capital-summary');
+            if (summaryEl) {
+                summaryEl.innerHTML = `
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-[10px] uppercase text-gray-500 mb-1">STARTING POINTS</p>
+                            <p class="text-lg font-mono text-gray-400">${formatInr(auctionConfig.totalCapital)}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase text-gray-500 mb-1">SPENT</p>
+                            <p class="text-lg font-mono ${percentUsed > CONFIG.OVERSPEND_WARNING_THRESHOLD ? 'text-yellow-500' : 'text-white'}">
+                                ${formatInr(totalSpent)} <span class="text-xs text-gray-500">(${percentUsed.toFixed(1)}%)</span>
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase text-gray-500 mb-1">REMAINING</p>
+                            <p class="text-2xl font-mono font-bold ${remaining < 0 ? 'text-red-500' : remaining < auctionConfig.totalCapital * 0.1 ? 'text-yellow-500' : 'text-green-400'}">
+                                ${formatInr(remaining)}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="capital-bar mt-4">
+                        <div class="capital-bar-fill" style="width: ${Math.min(percentUsed, 100)}%"></div>
+                    </div>
+                    
+                    ${totalProfit !== 0 ? `
+                        <div class="mt-4 pt-4 border-t border-gray-800">
+                            <p class="text-[10px] uppercase text-gray-500 mb-1">TOTAL P/L (REVEALED ITEMS)</p>
+                            <p class="text-xl font-mono font-bold ${totalProfit > 0 ? 'text-green-400' : totalProfit < 0 ? 'text-red-400' : 'text-white'}">
+                                ${totalProfit > 0 ? '+' : ''}${formatInr(totalProfit)}
+                            </p>
+                        </div>
+                    ` : ''}
+                    
+                    ${remaining < 0 ? `
+                        <div class="mt-4 p-3 bg-red-900/30 border border-red-500 rounded text-center">
+                            <p class="text-red-400 font-mono text-xs">
+                                ⚠️ OVER LIMIT BY ${formatInr(Math.abs(remaining))}
+                            </p>
+                        </div>
+                    ` : ''}
+                    
+                    ${percentUsed > CONFIG.OVERSPEND_WARNING_THRESHOLD && remaining >= 0 ? `
+                        <div class="mt-4 p-3 bg-yellow-900/30 border border-yellow-500 rounded text-center">
+                            <p class="text-yellow-400 font-mono text-xs">
+                                ⚠️ LOW POINTS WARNING - ${formatInr(remaining)} remaining
+                            </p>
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+
+        // ==========================================
+        // BID SAVING WITH ANTI-CHEAT
+        // ==========================================
+        function saveBid(itemId, bidValue, status) {
+            const team = getTeamSession();
+            if (!team || !database) return;
+
+            const item = auctionItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            // Check if bid is locked
+            const currentEntry = auctionBids[itemId];
+            if (currentEntry && currentEntry.status === CONFIG.BID_STATUSES.LOCKED) {
+                showToast('🔒 Cannot change bid - already locked', 'error');
+                return;
+            }
+
+            // Check if trying to change after reveal
+            if (item.reveal && item.revealedAt) {
+                const timeSinceReveal = Date.now() - item.revealedAt;
+                if (timeSinceReveal > CONFIG.BID_LOCK_TIMEOUT) {
+                    showToast('🔒 Cannot change bid - time expired', 'error');
+                    return;
+                }
+            }
+
+            // Update cache
+            bidCache[itemId] = { bid: bidValue, status: status };
+            bidDirtyFlags[itemId] = true;
+
+            // Debounced save
+            clearTimeout(bidSaveTimers[itemId]);
+            bidSaveTimers[itemId] = setTimeout(() => {
+                if (bidDirtyFlags[itemId]) {
+                    safeFirebaseOperation(
+                        () => database.ref(`${CONFIG.FIREBASE_PATHS.BIDS}/${team}/${itemId}`).set({
+                            bid: bidCache[itemId].bid,
+                            status: bidCache[itemId].status,
+                            updatedAt: Date.now()
+                        }).then(() => {
+                            bidDirtyFlags[itemId] = false;
+                            showToast('✓ Bid saved', 'success');
+                        }),
+                        () => {
+                            // Fallback: save to localStorage
+                            localStorage.setItem(`pending_bid_${itemId}`, JSON.stringify({
+                                bid: bidValue,
+                                status: status,
+                                team: team
+                            }));
+                        }
+                    );
+                }
+            }, CONFIG.DEBOUNCE_DELAY);
+        }
+
+        // ==========================================
+        // BID INPUT HANDLER
+        // ==========================================
+        function handleBidInput(itemId, value) {
+            const team = getTeamSession();
+            if (!team) return;
+
+            const bidVal = Number(value) || 0;
+            const item = auctionItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            // Check if winner
+            if (!item.winnerTeam || item.winnerTeam !== team) {
+                showToast('⚠️ Only the winner can enter a bid', 'warning');
+                return;
+            }
+
+            // High bid warning
+            const percentage = (bidVal / auctionConfig.totalCapital) * 100;
+            if (percentage > CONFIG.HIGH_BID_WARNING_THRESHOLD) {
+                if (!confirm(
+                    `⚠️ HIGH BID WARNING\n\n` +
+                    `You're bidding ${formatInr(bidVal)} (${percentage.toFixed(1)}% of your points) on "${item.name}".\n\n` +
+                    `Continue?`
+                )) {
+                    // Reset input
+                    const input = document.querySelector(`[data-bid-input="${itemId}"]`);
+                    if (input) input.value = auctionBids[itemId]?.bid || '';
+                    return;
+                }
+            }
+
+            // Update local state
+            auctionBids[itemId] = { 
+                bid: bidVal, 
+                status: bidVal > 0 ? CONFIG.BID_STATUSES.WON : CONFIG.BID_STATUSES.PENDING 
+            };
+
+            saveBid(itemId, bidVal, auctionBids[itemId].status);
+            updateLocalBidDisplay(itemId);
+            updateSummary();
+        }
+
+        // ==========================================
+        // DIDN'T WIN HANDLER
+        // ==========================================
+        function handleDidntWin(itemId) {
+            const team = getTeamSession();
+            if (!team) return;
+
+            const item = auctionItems.find(i => i.id === itemId);
+            if (!item || !item.winnerTeam) return;
+
+            const current = auctionBids[itemId] || { bid: 0, status: CONFIG.BID_STATUSES.PENDING };
+
+            if (current.status === CONFIG.BID_STATUSES.DIDNT_WIN) {
+                // Restore from backup
+                const backup = bidBackups[itemId];
+                if (backup) {
+                    auctionBids[itemId] = backup;
+                    delete bidBackups[itemId];
+                } else {
+                    auctionBids[itemId] = { bid: 0, status: CONFIG.BID_STATUSES.PENDING };
+                }
+            } else {
+                // Backup and mark didn't win
+                bidBackups[itemId] = { ...current };
+                auctionBids[itemId] = { bid: 0, status: CONFIG.BID_STATUSES.DIDNT_WIN };
+            }
+
+            saveBid(itemId, auctionBids[itemId].bid, auctionBids[itemId].status);
+            updateLocalBidDisplay(itemId);
+            updateSummary();
+        }
+
+        // ==========================================
+        // LOCAL DISPLAY UPDATE
+        // ==========================================
+        function updateLocalBidDisplay(itemId) {
+            const team = getTeamSession();
+            const item = auctionItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            const entry = auctionBids[itemId] || { bid: 0, status: CONFIG.BID_STATUSES.PENDING };
+            const outcome = computeOutcome(item, team, entry);
+
+            const outcomeEl = document.querySelector(`[data-outcome="${itemId}"]`);
+            if (outcomeEl) {
+                outcomeEl.textContent = outcome.text;
+                outcomeEl.className = `font-mono text-sm ${outcome.cls}`;
+            }
+
+            const didntWinBtn = document.querySelector(`[data-didnt-win="${itemId}"]`);
+            if (didntWinBtn) {
+                didntWinBtn.textContent = entry.status === CONFIG.BID_STATUSES.DIDNT_WIN ? "UNDO DIDN'T WIN" : "DIDN'T WIN";
+            }
+
+            const msgEl = document.querySelector(`[data-didntwin-msg="${itemId}"]`);
+            if (msgEl) {
+                msgEl.textContent = entry.status === CONFIG.BID_STATUSES.DIDNT_WIN ? "Better luck next time." : "";
+            }
+
+            const card = document.querySelector(`[data-auction-item="${itemId}"]`);
+            if (card) {
+                card.classList.toggle("opacity-70", entry.status === CONFIG.BID_STATUSES.DIDNT_WIN);
+                card.classList.toggle("border-gray-700", entry.status === CONFIG.BID_STATUSES.DIDNT_WIN);
+                card.classList.toggle("border-gray-800", entry.status !== CONFIG.BID_STATUSES.DIDNT_WIN);
+            }
+        }
+
+        // ==========================================
+        // FIREBASE LISTENERS (WITH CLEANUP)
+        // ==========================================
+        function stopListeners() {
+            if (listeners.config) database.ref(CONFIG.FIREBASE_PATHS.CONFIG).off("value", listeners.config);
+            if (listeners.items) database.ref(CONFIG.FIREBASE_PATHS.ITEMS).off("value", listeners.items);
+            if (listeners.status) database.ref(CONFIG.FIREBASE_PATHS.STATUS).off("value", listeners.status);
+            if (listeners.bids) {
+                const team = getTeamSession();
+                if (team) database.ref(`${CONFIG.FIREBASE_PATHS.BIDS}/${team}`).off("value", listeners.bids);
+            }
+            listeners = {};
+        }
+
+        function debouncedRender() {
+            clearTimeout(renderTimeout);
+            renderTimeout = setTimeout(() => {
+                renderAuction();
+                updateBidViews();
+                updateSummary();
+            }, CONFIG.RENDER_DEBOUNCE);
+        }
+
         function startListeners(team) {
             if (!database) return;
+            
+            stopListeners();
 
-            database.ref(AUCTION_CONFIG_PATH).on("value", (snapshot) => {
+            listeners.config = database.ref(CONFIG.FIREBASE_PATHS.CONFIG).on("value", (snapshot) => {
                 auctionConfig = normalizeAuctionConfig(snapshot.val());
                 readyFlags.config = true;
-                renderAuction();
-                updateBidViews();
+                debouncedRender();
             });
 
-            database.ref(AUCTION_ITEMS_PATH).on("value", (snapshot) => {
+            listeners.items = database.ref(CONFIG.FIREBASE_PATHS.ITEMS).on("value", (snapshot) => {
                 auctionItems = normalizeAuctionItems(snapshot.val());
                 readyFlags.items = true;
-                renderAuction();
-                updateBidViews();
+                
+                // Check for bid locks
+                auctionItems.forEach(item => {
+                    if (item.reveal) {
+                        lockBidIfNeeded(item.id, item, team);
+                    }
+                });
+                
+                debouncedRender();
             });
 
-            database.ref(AUCTION_STATUS_PATH).on("value", (snapshot) => {
+            listeners.status = database.ref(CONFIG.FIREBASE_PATHS.STATUS).on("value", (snapshot) => {
                 auctionStatus = snapshot.val() || "closed";
                 readyFlags.status = true;
-                renderAuction();
-                updateBidViews();
+                debouncedRender();
             });
 
-            database.ref(`${AUCTION_BIDS_PATH}/${team}`).on("value", (snapshot) => {
+            listeners.bids = database.ref(`${CONFIG.FIREBASE_PATHS.BIDS}/${team}`).on("value", (snapshot) => {
                 auctionBids = normalizeAuctionBids(snapshot.val());
                 updateBidViews();
+                updateSummary();
             });
         }
 
+        // ==========================================
+        // RENDER AUCTION
+        // ==========================================
         function renderAuction() {
             const team = getTeamSession();
             const loginScreen = document.getElementById("team-login-screen");
@@ -500,6 +837,7 @@
             if (loginScreen) loginScreen.style.display = "none";
             if (logoutBtn) logoutBtn.classList.remove("hidden");
             if (logoutBtnMobile) logoutBtnMobile.classList.remove("hidden");
+            
             const teamLabel = document.getElementById("auction-team");
             if (teamLabel) teamLabel.textContent = `WELCOME, TEAM ${team}`;
 
@@ -514,154 +852,140 @@
             if (header) header.style.display = "block";
             if (content) content.style.display = "block";
 
+            renderItems();
+        }
+
+        // ==========================================
+        // RENDER ITEMS (EVENT DELEGATION)
+        // ==========================================
+        function renderItems() {
+            const team = getTeamSession();
             const itemsContainer = document.getElementById("auction-items");
             if (!itemsContainer) return;
 
             const filteredItems = auctionItems.filter((item) => item.display === true);
 
+            if (filteredItems.length === 0) {
+                itemsContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <i data-lucide="package-open" class="w-16 h-16 text-gray-700 mx-auto mb-4"></i>
+                        <p class="text-gray-400 font-mono text-sm">No items available yet. Wait for admin to display items.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
             itemsContainer.innerHTML = filteredItems.map((item) => {
-                const bidEntry = auctionBids[item.id] || { bid: 0, status: "pending" };
+                const bidEntry = auctionBids[item.id] || { bid: 0, status: CONFIG.BID_STATUSES.PENDING };
                 const isWinner = item.winnerTeam && item.winnerTeam === team;
-                const canEdit = isWinner && !item.reveal && bidEntry.status !== "didnt_win";
-                const canToggleDidntWin = !!item.winnerTeam && !item.reveal;
+                const isLocked = bidEntry.status === CONFIG.BID_STATUSES.LOCKED;
+                const canEdit = isWinner && !item.reveal && bidEntry.status !== CONFIG.BID_STATUSES.DIDNT_WIN && !isLocked;
+                const canToggleDidntWin = !!item.winnerTeam && !item.reveal && !isLocked;
                 const actualDisplay = item.reveal ? formatInr(item.actualValue) : "HIDDEN";
                 const winnerDisplay = item.winnerTeam ? item.winnerTeam : "NOT SET";
                 const outcome = computeOutcome(item, team, bidEntry);
-                const itemClass = bidEntry.status === "didnt_win" ? "opacity-70 border-gray-700" : "border-gray-800";
+                const itemClass = bidEntry.status === CONFIG.BID_STATUSES.DIDNT_WIN ? "opacity-70 border-gray-700" : "border-gray-800";
 
                 return `
-                    <div class="border ${itemClass} p-4 rounded bg-black/40" data-auction-item="${item.id}">
-                        <div class="flex flex-wrap justify-between items-center gap-3">
-                            <div>
+                    <div class="border ${itemClass} p-4 md:p-6 rounded-lg bg-black/40" data-auction-item="${item.id}">
+                        <div class="flex flex-wrap justify-between items-start gap-3 mb-4">
+                            <div class="flex-1 min-w-0">
                                 <p class="text-xs uppercase text-gray-500">${escapeHtml(item.category)} • #${item.number}</p>
-                                <p class="text-white font-mono text-sm">${escapeHtml(item.name)}</p>
-                                <p class="text-[10px] uppercase text-gray-500 mt-1">Winner: <span class="text-white">${winnerDisplay}</span></p>
+                                <h3 class="text-white font-mono text-lg font-bold mt-1">${escapeHtml(item.name)}</h3>
+                                <p class="text-[10px] uppercase text-gray-500 mt-2">
+                                    Winner: <span class="${isWinner ? 'text-green-500' : 'text-white'}">${winnerDisplay}</span>
+                                </p>
                             </div>
                             <div class="text-right">
                                 <p class="text-[10px] uppercase text-gray-500">Actual Value</p>
-                                <p class="text-white font-mono text-sm" data-actual-value="${item.id}">${actualDisplay}</p>
+                                <p class="text-white font-mono text-xl font-bold" data-actual-value="${item.id}">${actualDisplay}</p>
                             </div>
                         </div>
-                        <div class="mt-3 grid md:grid-cols-3 gap-2">
+                        
+                        <div class="grid md:grid-cols-3 gap-3">
                             <div>
-                                <label class="text-[10px] uppercase text-gray-500" for="bid-${item.id}">Your Bid</label>
+                                <label class="text-[10px] uppercase text-gray-500 block mb-2" for="bid-${item.id}">
+                                    Your Bid ${isLocked ? '(Locked 🔒)' : ''}
+                                </label>
                                 <input 
                                     id="bid-${item.id}"
                                     type="number"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
                                     min="0"
-                                    step="1"
-                                    class="code-input w-full p-2 rounded mt-1 font-mono text-sm tracking-widest"
-                                    placeholder="${isWinner ? "Enter bid" : "Not winner"}"
+                                    step="1000"
+                                    class="code-input w-full p-3 rounded font-mono text-sm tracking-widest ${isLocked ? 'bid-locked' : ''}"
+                                    placeholder="${isWinner ? (isLocked ? 'LOCKED' : 'Enter bid') : 'Not winner'}"
                                     data-bid-input="${item.id}"
-                                    ${canEdit ? "" : "disabled"}>
+                                    ${canEdit ? '' : 'disabled'}>
                             </div>
                             <div class="flex items-end">
-                                <button class="unlock-btn w-full py-2 font-mono text-xs tracking-wider" data-didnt-win="${item.id}" ${canToggleDidntWin ? "" : "disabled"}>
-                                    DIDN'T WIN
+                                <button 
+                                    class="unlock-btn w-full py-3 font-mono text-xs tracking-wider rounded disabled:opacity-50 disabled:cursor-not-allowed" 
+                                    data-didnt-win="${item.id}" 
+                                    ${canToggleDidntWin ? '' : 'disabled'}>
+                                    ${bidEntry.status === CONFIG.BID_STATUSES.DIDNT_WIN ? "UNDO DIDN'T WIN" : "DIDN'T WIN"}
                                 </button>
-                                <span class="text-[10px] text-gray-500 mt-2 block min-h-[14px]" data-didntwin-msg="${item.id}"></span>
                             </div>
-                            <div class="bg-black/40 border border-gray-800 p-2 rounded">
-                                <p class="text-[10px] uppercase text-gray-500">Outcome</p>
-                                <p class="font-mono text-sm ${outcome.cls}" data-outcome="${item.id}">${outcome.text}</p>
+                            <div class="bg-black/60 border border-gray-800 p-3 rounded">
+                                <p class="text-[10px] uppercase text-gray-500 mb-1">Outcome</p>
+                                <p class="font-mono text-sm font-bold ${outcome.cls}" data-outcome="${item.id}">${outcome.text}</p>
                             </div>
                         </div>
+                        
+                        <p class="text-[10px] text-gray-500 mt-2 text-center min-h-[14px]" data-didntwin-msg="${item.id}">
+                            ${bidEntry.status === CONFIG.BID_STATUSES.DIDNT_WIN ? 'Better luck next time.' : ''}
+                        </p>
                     </div>
                 `;
             }).join("");
 
-            filteredItems.forEach((item) => {
-                if (!item.display) return;
-                const input = document.querySelector(`[data-bid-input="${item.id}"]`);
-                const didntWinBtn = document.querySelector(`[data-didnt-win="${item.id}"]`);
-                const outcomeEl = document.querySelector(`[data-outcome="${item.id}"]`);
-                const actualEl = document.querySelector(`[data-actual-value="${item.id}"]`);
-
-                const entry = auctionBids[item.id] || { bid: 0, status: "pending" };
-                const isWinner = item.winnerTeam && item.winnerTeam === team;
-                const canToggleDidntWin = !!item.winnerTeam && !item.reveal;
-                const msgEl = document.querySelector(`[data-didntwin-msg="${item.id}"]`);
-                if (input) {
-                    input.value = entry.bid ? entry.bid : "";
-                }
-
-                const setOutcome = () => {
-                    const current = auctionBids[item.id] || { bid: 0, status: "pending" };
-                    const outcome = computeOutcome(item, team, current);
-                    if (outcomeEl) {
-                        outcomeEl.textContent = outcome.text;
-                        outcomeEl.classList.remove("text-white", "text-gray-400", "text-green-400", "text-red-400", "text-yellow-400");
-                        outcomeEl.classList.add(outcome.cls);
-                    }
-
-                    if (didntWinBtn) {
-                        didntWinBtn.textContent = current.status === "didnt_win" ? "UNDO DIDN'T WIN" : "DIDN'T WIN";
-                    }
-                    if (actualEl) {
-                        actualEl.textContent = item.reveal ? formatInr(item.actualValue) : "HIDDEN";
-                    }
-                    if (msgEl) {
-                        msgEl.textContent = current.status === "didnt_win" ? "Better luck next time." : "";
-                    }
-                    const card = document.querySelector(`[data-auction-item="${item.id}"]`);
-                    if (card) {
-                        card.classList.toggle("opacity-70", current.status === "didnt_win");
-                        card.classList.toggle("border-gray-700", current.status === "didnt_win");
-                        card.classList.toggle("border-gray-800", current.status !== "didnt_win");
-                    }
-                };
-
-                if (input && !input.dataset.bound) {
-                    input.addEventListener("input", () => {
-                        const bidVal = Number(input.value) || 0;
-                        auctionBids[item.id] = { bid: bidVal, status: bidVal > 0 ? "won" : "pending" };
-                        clearTimeout(bidSaveTimers[item.id]);
-                        bidSaveTimers[item.id] = setTimeout(() => {
-                            database.ref(`${AUCTION_BIDS_PATH}/${team}/${item.id}`).set({
-                                bid: auctionBids[item.id].bid,
-                                status: auctionBids[item.id].status,
-                                updatedAt: Date.now()
-                            });
-                        }, 400);
-                        setOutcome();
-                        updateSummary();
-                    });
-                    input.dataset.bound = "true";
-                }
-
-                if (didntWinBtn && !didntWinBtn.dataset.bound) {
-                    didntWinBtn.addEventListener("click", () => {
-                        if (!canToggleDidntWin) return;
-                        const current = auctionBids[item.id] || { bid: 0, status: "pending" };
-                        if (current.status === "didnt_win") {
-                            auctionBids[item.id] = { bid: current.bid || 0, status: current.bid > 0 ? "won" : "pending" };
-                        } else {
-                            auctionBids[item.id] = { bid: 0, status: "didnt_win" };
-                            if (input) input.value = "";
-                        }
-                        clearTimeout(bidSaveTimers[item.id]);
-                        bidSaveTimers[item.id] = setTimeout(() => {
-                            database.ref(`${AUCTION_BIDS_PATH}/${team}/${item.id}`).set({
-                                bid: auctionBids[item.id].bid,
-                                status: auctionBids[item.id].status,
-                                updatedAt: Date.now()
-                            });
-                        }, 200);
-                        setOutcome();
-                        updateSummary();
-                    });
-                    didntWinBtn.dataset.bound = "true";
-                }
-
-                setOutcome();
-            });
-
-            updateSummary();
+            lucide.createIcons();
+            attachEventDelegation();
         }
 
+        // ==========================================
+        // EVENT DELEGATION (FIXED)
+        // ==========================================
+        function attachEventDelegation() {
+            const itemsContainer = document.getElementById("auction-items");
+            if (!itemsContainer) return;
+
+            // Remove old listeners
+            if (itemsContainer._boundInputHandler) {
+                itemsContainer.removeEventListener("input", itemsContainer._boundInputHandler);
+            }
+            if (itemsContainer._boundClickHandler) {
+                itemsContainer.removeEventListener("click", itemsContainer._boundClickHandler);
+            }
+
+            // Input delegation
+            itemsContainer._boundInputHandler = (e) => {
+                if (e.target.matches('[data-bid-input]')) {
+                    const itemId = e.target.dataset.bidInput;
+                    handleBidInput(itemId, e.target.value);
+                }
+            };
+            itemsContainer.addEventListener("input", itemsContainer._boundInputHandler);
+
+            // Click delegation
+            itemsContainer._boundClickHandler = (e) => {
+                if (e.target.matches('[data-didnt-win]')) {
+                    const itemId = e.target.dataset.didntWin;
+                    handleDidntWin(itemId);
+                }
+            };
+            itemsContainer.addEventListener("click", itemsContainer._boundClickHandler);
+        }
+
+        // ==========================================
+        // UPDATE BID VIEWS
+        // ==========================================
         function updateBidViews() {
             const team = getTeamSession();
             if (!team) return;
+
             const visibleItems = auctionItems.filter((item) => item.display === true);
 
             visibleItems.forEach((item) => {
@@ -671,113 +995,135 @@
                 const didntWinBtn = document.querySelector(`[data-didnt-win="${item.id}"]`);
                 const msgEl = document.querySelector(`[data-didntwin-msg="${item.id}"]`);
 
-                const entry = auctionBids[item.id] || { bid: 0, status: "pending" };
+                const entry = auctionBids[item.id] || { bid: 0, status: CONFIG.BID_STATUSES.PENDING };
                 const isWinner = item.winnerTeam && item.winnerTeam === team;
-                const canEdit = isWinner && !item.reveal && entry.status !== "didnt_win";
-                const canToggleDidntWin = !!item.winnerTeam && !item.reveal;
+                const isLocked = entry.status === CONFIG.BID_STATUSES.LOCKED;
+                const canEdit = isWinner && !item.reveal && entry.status !== CONFIG.BID_STATUSES.DIDNT_WIN && !isLocked;
+                const canToggleDidntWin = !!item.winnerTeam && !item.reveal && !isLocked;
                 const outcome = computeOutcome(item, team, entry);
 
                 if (input && document.activeElement !== input) {
                     input.value = entry.bid ? entry.bid : "";
-                }
-                if (input) {
                     input.disabled = !canEdit;
+                    if (isLocked) {
+                        input.classList.add('bid-locked');
+                    } else {
+                        input.classList.remove('bid-locked');
+                    }
                 }
+                
                 if (didntWinBtn) {
                     didntWinBtn.disabled = !canToggleDidntWin;
+                    didntWinBtn.textContent = entry.status === CONFIG.BID_STATUSES.DIDNT_WIN ? "UNDO DIDN'T WIN" : "DIDN'T WIN";
                 }
+                
                 if (outcomeEl) {
                     outcomeEl.textContent = outcome.text;
-                    outcomeEl.classList.remove("text-white", "text-gray-400", "text-green-400", "text-red-400", "text-yellow-400");
-                    outcomeEl.classList.add(outcome.cls);
+                    outcomeEl.className = `font-mono text-sm font-bold ${outcome.cls}`;
                 }
+                
                 if (actualEl) {
                     actualEl.textContent = item.reveal ? formatInr(item.actualValue) : "HIDDEN";
                 }
-                if (didntWinBtn) {
-                    didntWinBtn.textContent = entry.status === "didnt_win" ? "UNDO DIDN'T WIN" : "DIDN'T WIN";
-                }
+                
                 if (msgEl) {
-                    msgEl.textContent = entry.status === "didnt_win" ? "Better luck next time." : "";
+                    msgEl.textContent = entry.status === CONFIG.BID_STATUSES.DIDNT_WIN ? "Better luck next time." : "";
                 }
+
                 const card = document.querySelector(`[data-auction-item="${item.id}"]`);
                 if (card) {
-                    card.classList.toggle("opacity-70", entry.status === "didnt_win");
-                    card.classList.toggle("border-gray-700", entry.status === "didnt_win");
-                    card.classList.toggle("border-gray-800", entry.status !== "didnt_win");
+                    card.classList.toggle("opacity-70", entry.status === CONFIG.BID_STATUSES.DIDNT_WIN);
+                    card.classList.toggle("border-gray-700", entry.status === CONFIG.BID_STATUSES.DIDNT_WIN);
+                    card.classList.toggle("border-gray-800", entry.status !== CONFIG.BID_STATUSES.DIDNT_WIN);
                 }
             });
-
-            updateSummary();
         }
 
-        function updateSummary() {
-            const team = getTeamSession();
-            if (!team) return;
-            let totalSpent = 0;
-            let totalProfit = 0;
-            let hasReveal = false;
-
-            auctionItems.forEach((item) => {
-                if (!item.display) return;
-                const entry = auctionBids[item.id] || { bid: 0, status: "pending" };
-                if (entry.status === "won" && entry.bid > 0) {
-                    totalSpent += entry.bid;
-                    if (item.reveal) {
-                        totalProfit += (item.actualValue - entry.bid);
-                        hasReveal = true;
-                    }
-                }
-            });
-
-            const remaining = (auctionConfig.totalCapital || 0) - totalSpent;
-
-            const spentEl = document.getElementById("summary-total-spent");
-            const remainingEl = document.getElementById("summary-remaining");
-            const profitEl = document.getElementById("summary-profit");
-            const hintEl = document.getElementById("summary-hint");
-
-            if (spentEl) spentEl.textContent = formatInr(totalSpent);
-            if (remainingEl) {
-                remainingEl.textContent = formatInr(remaining);
-                remainingEl.classList.remove("text-white", "text-red-400", "text-green-400");
-                remainingEl.classList.add(remaining < 0 ? "text-red-400" : "text-green-400");
-            }
-            if (profitEl) {
-                if (!hasReveal) {
-                    profitEl.textContent = "-";
-                    profitEl.classList.remove("text-red-400", "text-green-400");
-                    profitEl.classList.add("text-white");
-                } else {
-                    profitEl.textContent = formatInr(totalProfit);
-                    profitEl.classList.remove("text-white", "text-red-400", "text-green-400");
-                    if (totalProfit > 0) {
-                        profitEl.classList.add("text-green-400");
-                    } else if (totalProfit < 0) {
-                        profitEl.classList.add("text-red-400");
-                    } else {
-                        profitEl.classList.add("text-white");
-                    }
-                }
-            }
-            if (hintEl) {
-                hintEl.textContent = hasReveal ? "Based on revealed actuals" : "Pending actual reveal";
-            }
-        }
-
-        function startAuction() {
-            const team = getTeamSession();
-            if (!team) {
-                renderAuction();
+        // ==========================================
+        // LOGIN/LOGOUT
+        // ==========================================
+        function loginTeam() {
+            const input = document.getElementById("team-login-input");
+            const teamCode = input.value.trim().toUpperCase();
+            
+            if (!teamCode) {
+                showToast('⚠️ Please enter team code', 'warning');
                 return;
             }
-            startListeners(team);
+
+            setTeamSession(teamCode);
+            startListeners(teamCode);
             renderAuction();
+            showToast('✓ Logged in as TEAM ' + teamCode, 'success');
         }
 
-        window.addEventListener("load", () => {
+        function logoutTeam() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Save any pending bids
+                Object.keys(bidDirtyFlags).forEach(itemId => {
+                    if (bidDirtyFlags[itemId] && bidCache[itemId]) {
+                        const team = getTeamSession();
+                        database.ref(`${CONFIG.FIREBASE_PATHS.BIDS}/${team}/${itemId}`).set({
+                            ...bidCache[itemId],
+                            updatedAt: Date.now()
+                        });
+                    }
+                });
+
+                stopListeners();
+                clearTeamSession();
+                location.reload();
+            }
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const team = getTeamSession();
+            
+            if (team) {
+                startListeners(team);
+                renderAuction();
+            } else {
+                document.getElementById("team-login-screen").style.display = "flex";
+                document.getElementById("auction-loading").style.display = "none";
+            }
+
+            // Logout buttons
+            document.getElementById("team-logout")?.addEventListener('click', logoutTeam);
+            document.getElementById("team-logout-mobile")?.addEventListener('click', logoutTeam);
+            document.getElementById("team-logout-closed")?.addEventListener('click', logoutTeam);
+
+            // Login on Enter
+            document.getElementById("team-login-input")?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') loginTeam();
+            });
+
             lucide.createIcons();
-            startAuction();
+        });
+
+        // Save bids before unload
+        window.addEventListener('beforeunload', () => {
+            const team = getTeamSession();
+            if (team) {
+                Object.keys(bidDirtyFlags).forEach(itemId => {
+                    if (bidDirtyFlags[itemId] && bidCache[itemId]) {
+                        navigator.sendBeacon(
+                            `https://${database.ref().toString().split('/')[2]}/${CONFIG.FIREBASE_PATHS.BIDS}/${team}/${itemId}.json`,
+                            JSON.stringify(bidCache[itemId])
+                        );
+                    }
+                });
+            }
+            stopListeners();
+        });
+
+        // Reload on nav back
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                location.reload();
+            }
         });
     </script>
 </body>

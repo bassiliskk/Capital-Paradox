@@ -591,7 +591,7 @@ body { background-color: #050505; color: #FAFAFA; }
                 overview: {
                     teamsCapital: [
                         "Each team consists of two members.",
-                        "Starting capital: INR 100,000 per team.",
+                        "Starting points: 100,000 per team.",
                         "This is your sole resource for the entire round."
                     ],
                     availableAssets: "Various strategic assets will be available for purchase through the auction, each with assigned values and potential applications. Some assets may carry hidden consequences that will only be revealed in subsequent rounds.",
@@ -734,7 +734,7 @@ body { background-color: #050505; color: #FAFAFA; }
 
                                 <!-- Teams & Capital -->
                                 <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                    <p class="text-xs uppercase text-gray-500 mb-2">TEAMS & CAPITAL</p>
+                                    <p class="text-xs uppercase text-gray-500 mb-2">TEAMS & POINTS</p>
                                     <ul class="space-y-2 text-gray-300 text-xs md:text-sm">
                                         ${round.overview.teamsCapital.map(t => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${t}</li>`).join('')}
                                     </ul>

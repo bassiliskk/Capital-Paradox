@@ -420,7 +420,7 @@ body{
     <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
       <div style="min-width:220px;flex:1;">
         <label for="budget-total-input" style="color:#DC2626;font-size:11px;display:block;margin-bottom:6px;">
-          TOTAL CAPITAL
+          TOTAL POINTS
         </label>
         <input 
           type="number"
@@ -428,7 +428,7 @@ body{
           class="budget-input"
           min="0"
           step="1"
-          aria-label="Total capital for round one">
+          aria-label="Total points for round one">
       </div>
     </div>
 
@@ -447,6 +447,60 @@ body{
         <button class="btn" onclick="hideAllDisplayedItems()">HIDE ALL ITEMS</button>
       </div>
       <p class="text-gray-400 text-xs mt-2">Changes save automatically.</p>
+    </div>
+  </div>
+
+  <!-- Leaderboard Panel -->
+  <div class="panel">
+    <h2 style="color:#DC2626;margin-bottom:20px;font-size:24px;display:flex;align-items:center;gap:12px;">
+      <span>📊</span>
+      <span>LIVE LEADERBOARD</span>
+      <span id="leaderboard-last-update" style="font-size:11px;color:#888;margin-left:auto;"></span>
+    </h2>
+    
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <button class="btn" onclick="refreshLeaderboard()" id="refresh-leaderboard-btn">
+        🔄 REFRESH NOW
+      </button>
+      <button class="btn" onclick="exportLeaderboard()">
+        📥 EXPORT CSV
+      </button>
+      <button class="btn" onclick="toggleAutoRefresh()" id="toggle-auto-refresh">
+        ▶️ AUTO-REFRESH: OFF
+      </button>
+      <button class="btn" onclick="checkSuspiciousActivity()">
+        🚨 CHECK SUSPICIOUS ACTIVITY
+      </button>
+    </div>
+    
+    <div id="leaderboard-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;">
+      <!-- Stats filled by JS -->
+    </div>
+    
+    <div id="leaderboard-container">
+      <p style="color:#888;text-align:center;padding:40px;">Loading leaderboard...</p>
+    </div>
+  </div>
+
+  <!-- Team Details Modal -->
+  <div id="team-details-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;padding:20px;overflow:auto;">
+    <div style="max-width:1000px;margin:40px auto;background:#050505;border:2px solid #DC2626;border-radius:12px;padding:32px;">
+      <div style="display:flex;justify-between;align-items:center;margin-bottom:24px;">
+        <h2 id="team-details-title" style="color:#DC2626;font-size:24px;"></h2>
+        <button onclick="closeTeamDetails()" style="background:#DC2626;color:white;border:none;padding:8px 16px;cursor:pointer;border-radius:4px;">✕ CLOSE</button>
+      </div>
+      <div id="team-details-content"></div>
+    </div>
+  </div>
+
+  <!-- Suspicious Activity Modal -->
+  <div id="suspicious-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;padding:20px;overflow:auto;">
+    <div style="max-width:1000px;margin:40px auto;background:#050505;border:2px solid #ef4444;border-radius:12px;padding:32px;">
+      <div style="display:flex;justify-between;align-items:center;margin-bottom:24px;">
+        <h2 style="color:#ef4444;font-size:24px;">🚨 SUSPICIOUS ACTIVITY REPORT</h2>
+        <button onclick="closeSuspiciousModal()" style="background:#ef4444;color:white;border:none;padding:8px 16px;cursor:pointer;border-radius:4px;">✕ CLOSE</button>
+      </div>
+      <div id="suspicious-content"></div>
     </div>
   </div>
 </div>
@@ -767,7 +821,8 @@ function normalizeAuctionItems(data) {
       display: item.display !== false,
       reveal: item.reveal === true,
       winnerTeam: typeof item.winnerTeam === "string" ? item.winnerTeam : "",
-      displayedAt: Number(item.displayedAt) || 0
+      displayedAt: Number(item.displayedAt) || 0,
+      revealedAt: Number(item.revealedAt) || 0
     };
   });
 
@@ -984,6 +1039,7 @@ function renderBudgetSection() {
       const id = input.getAttribute("data-budget-reveal");
       if (!auctionItemsState[id]) return;
       auctionItemsState[id].reveal = input.checked;
+      auctionItemsState[id].revealedAt = input.checked ? Date.now() : 0;
       scheduleBudgetSave();
     });
   });
@@ -1038,7 +1094,8 @@ function loadAuctionConfig() {
           display: true,
           reveal: false,
           winnerTeam: "",
-          displayedAt: Date.now()
+          displayedAt: Date.now(),
+          revealedAt: 0
         };
       });
     }
@@ -1073,6 +1130,7 @@ function addBudgetItem() {
 function revealAllItems() {
   Object.keys(auctionItemsState).forEach((id) => {
     auctionItemsState[id].reveal = true;
+    auctionItemsState[id].revealedAt = Date.now();
   });
   renderBudgetSection();
   scheduleBudgetSave();
@@ -1081,6 +1139,7 @@ function revealAllItems() {
 function hideAllItems() {
   Object.keys(auctionItemsState).forEach((id) => {
     auctionItemsState[id].reveal = false;
+    auctionItemsState[id].revealedAt = 0;
   });
   renderBudgetSection();
   scheduleBudgetSave();
@@ -1121,6 +1180,7 @@ function revealNextItem() {
     return;
   }
   auctionItemsState[nextId].reveal = true;
+  auctionItemsState[nextId].revealedAt = Date.now();
   renderBudgetSection();
   scheduleBudgetSave();
 }
@@ -1157,6 +1217,462 @@ function assignWinnerNext() {
   });
   renderBudgetSection();
   scheduleBudgetSave();
+}
+
+// ==========================================
+// LEADERBOARD IMPLEMENTATION
+// ==========================================
+
+let leaderboardAutoRefresh = false;
+let leaderboardInterval = null;
+let lastLeaderboardData = null;
+
+function formatINR(amount) {
+  return Number(amount).toLocaleString('en-IN') + ' pts';
+}
+
+function calculateTeamScores() {
+  return new Promise((resolve) => {
+    const scores = {};
+    
+    database.ref('auctionBids').once('value', (bidsSnapshot) => {
+      const allBids = bidsSnapshot.val() || {};
+      
+      database.ref('auctionItems').once('value', (itemsSnapshot) => {
+        const items = itemsSnapshot.val() || {};
+        
+        database.ref('auctionConfig').once('value', (configSnapshot) => {
+          const config = configSnapshot.val() || {};
+          const totalCapital = config.totalCapital || 100000;
+          
+          Object.entries(allBids).forEach(([team, teamBids]) => {
+            let totalSpent = 0;
+            let totalProfit = 0;
+            let itemsWon = 0;
+            let itemsRevealed = 0;
+            let revealedProfit = 0;
+            const details = [];
+            
+            Object.entries(teamBids).forEach(([itemId, bid]) => {
+              if (bid.status === 'won' || bid.status === 'locked') {
+                totalSpent += bid.bid || 0;
+                itemsWon++;
+                
+                const item = items[itemId];
+                if (item && item.reveal) {
+                  const profit = (item.actualValue || 0) - (bid.bid || 0);
+                  totalProfit += profit;
+                  revealedProfit += profit;
+                  itemsRevealed++;
+                  
+                  details.push({
+                    itemName: item.name || 'Unknown',
+                    itemNumber: item.number || '',
+                    category: item.category || '',
+                    bid: bid.bid || 0,
+                    actualValue: item.actualValue || 0,
+                    profit: profit,
+                    revealed: true,
+                    status: bid.status
+                  });
+                } else if (item) {
+                  details.push({
+                    itemName: item.name || 'Unknown',
+                    itemNumber: item.number || '',
+                    category: item.category || '',
+                    bid: bid.bid || 0,
+                    actualValue: 0,
+                    profit: 0,
+                    revealed: false,
+                    status: bid.status
+                  });
+                }
+              }
+            });
+            
+            scores[team] = {
+              totalSpent,
+              totalProfit: revealedProfit,
+              potentialProfit: totalProfit,
+              itemsWon,
+              itemsRevealed,
+              capitalRemaining: totalCapital - totalSpent,
+              totalCapital,
+              details: details.sort((a, b) => b.revealed ? 1 : -1)
+            };
+          });
+          
+          lastLeaderboardData = scores;
+          resolve(scores);
+        });
+      });
+    });
+  });
+}
+
+function refreshLeaderboard() {
+  const btn = document.getElementById('refresh-leaderboard-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ REFRESHING...';
+  }
+  
+  calculateTeamScores().then(scores => {
+    renderLeaderboard(scores);
+    renderLeaderboardStats(scores);
+    
+    const now = new Date().toLocaleTimeString();
+    const label = document.getElementById('leaderboard-last-update');
+    if (label) label.textContent = `Last updated: ${now}`;
+    
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔄 REFRESH NOW';
+    }
+  });
+}
+
+function renderLeaderboardStats(scores) {
+  const teams = Object.keys(scores).length;
+  const totalItems = Object.values(scores).reduce((sum, s) => sum + s.itemsWon, 0);
+  const totalSpent = Object.values(scores).reduce((sum, s) => sum + s.totalSpent, 0);
+  const overBudget = Object.values(scores).filter(s => s.capitalRemaining < 0).length;
+  
+  const html = `
+    <div style="background:#1a1a1a;border:1px solid #333;padding:16px;border-radius:8px;">
+      <div style="color:#888;font-size:11px;margin-bottom:4px;">TEAMS COMPETING</div>
+      <div style="color:white;font-size:24px;font-weight:bold;">${teams}</div>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid #333;padding:16px;border-radius:8px;">
+      <div style="color:#888;font-size:11px;margin-bottom:4px;">TOTAL ITEMS WON</div>
+      <div style="color:white;font-size:24px;font-weight:bold;">${totalItems}</div>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid #333;padding:16px;border-radius:8px;">
+      <div style="color:#888;font-size:11px;margin-bottom:4px;">TOTAL SPENT</div>
+      <div style="color:white;font-size:24px;font-weight:bold;">${formatINR(totalSpent)}</div>
+    </div>
+    <div style="background:${overBudget > 0 ? '#4a0000' : '#1a1a1a'};border:1px solid ${overBudget > 0 ? '#ef4444' : '#333'};padding:16px;border-radius:8px;">
+      <div style="color:#888;font-size:11px;margin-bottom:4px;">OVER LIMIT</div>
+      <div style="color:${overBudget > 0 ? '#ef4444' : 'white'};font-size:24px;font-weight:bold;">${overBudget}</div>
+    </div>
+  `;
+  
+  const stats = document.getElementById('leaderboard-stats');
+  if (stats) stats.innerHTML = html;
+}
+
+function renderLeaderboard(scores) {
+  const sorted = Object.entries(scores).sort((a, b) => {
+    if (b[1].totalProfit !== a[1].totalProfit) {
+      return b[1].totalProfit - a[1].totalProfit;
+    }
+    return b[1].itemsRevealed - a[1].itemsRevealed;
+  });
+  
+  const html = `
+    <div style="overflow-x:auto;">
+      <table class="admin-table" style="min-width:900px;">
+        <thead>
+          <tr>
+            <th style="width:60px;">RANK</th>
+            <th>TEAM</th>
+            <th>ITEMS WON</th>
+            <th>ITEMS REVEALED</th>
+            <th>TOTAL SPENT</th>
+            <th>POINTS LEFT</th>
+            <th>TOTAL P/L</th>
+            <th>STATUS</th>
+            <th style="width:120px;">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(([team, data], idx) => {
+            const rank = idx + 1;
+            const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+            const profitColor = data.totalProfit > 0 ? '#22c55e' : data.totalProfit < 0 ? '#ef4444' : '#888';
+            const overBudget = data.capitalRemaining < 0;
+            const percentSpent = (data.totalSpent / data.totalCapital) * 100;
+            
+            return `
+              <tr style="${overBudget ? 'background:#4a0000;' : idx === 0 ? 'background:#1a3a1a;' : ''}">
+                <td style="text-align:center;font-size:24px;">${medal}</td>
+                <td style="font-weight:bold;font-size:14px;">${team}</td>
+                <td style="text-align:center;">
+                  <div style="font-size:18px;font-weight:bold;">${data.itemsWon}</div>
+                </td>
+                <td style="text-align:center;">
+                  <div style="font-size:14px;color:#888;">${data.itemsRevealed} / ${data.itemsWon}</div>
+                  <div style="font-size:10px;color:#666;">${data.itemsRevealed > 0 ? ((data.itemsRevealed/data.itemsWon)*100).toFixed(0) + '%' : '0%'}</div>
+                </td>
+                <td style="text-align:center;">
+                  <div style="font-size:14px;">${formatINR(data.totalSpent)}</div>
+                  <div style="font-size:10px;color:#666;">${percentSpent.toFixed(1)}% of points</div>
+                </td>
+                <td style="text-align:center;color:${overBudget ? '#ef4444' : data.capitalRemaining < data.totalCapital * 0.1 ? '#f59e0b' : '#888'}">
+                  <div style="font-size:14px;font-weight:bold;">${formatINR(data.capitalRemaining)}</div>
+                </td>
+                <td style="text-align:center;">
+                  <div style="font-size:18px;font-weight:bold;color:${profitColor};">
+                    ${data.totalProfit > 0 ? '+' : ''}${formatINR(data.totalProfit)}
+                  </div>
+                  ${data.itemsRevealed < data.itemsWon ? `<div style="font-size:10px;color:#888;">${data.itemsWon - data.itemsRevealed} unrevealed</div>` : ''}
+                </td>
+                <td style="text-align:center;">
+                  ${overBudget 
+                    ? '<span style="color:#ef4444;font-weight:bold;">⚠️ OVER LIMIT</span>' 
+                    : percentSpent > 90 
+                      ? '<span style="color:#f59e0b;">⚠️ LOW POINTS</span>'
+                      : '<span style="color:#22c55e;">✓ OK</span>'}
+                </td>
+                <td style="text-align:center;">
+                  <button class="btn" onclick="showTeamDetails('${team}')" style="font-size:10px;padding:6px 12px;">
+                    VIEW DETAILS
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  const container = document.getElementById('leaderboard-container');
+  if (container) container.innerHTML = html;
+}
+
+function showTeamDetails(team) {
+  if (!lastLeaderboardData || !lastLeaderboardData[team]) {
+    alert('No data for team: ' + team);
+    return;
+  }
+  
+  const data = lastLeaderboardData[team];
+  
+  const titleEl = document.getElementById('team-details-title');
+  if (titleEl) titleEl.textContent = `TEAM ${team} - DETAILED BREAKDOWN`;
+  
+  const contentEl = document.getElementById('team-details-content');
+  if (!contentEl) return;
+  contentEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;padding:20px;background:#1a1a1a;border-radius:8px;">
+      <div>
+        <div style="color:#888;font-size:11px;margin-bottom:4px;">TOTAL SPENT</div>
+        <div style="color:white;font-size:20px;font-weight:bold;">${formatINR(data.totalSpent)}</div>
+      </div>
+      <div>
+        <div style="color:#888;font-size:11px;margin-bottom:4px;">POINTS LEFT</div>
+        <div style="color:${data.capitalRemaining < 0 ? '#ef4444' : 'white'};font-size:20px;font-weight:bold;">
+          ${formatINR(data.capitalRemaining)}
+        </div>
+      </div>
+      <div>
+        <div style="color:#888;font-size:11px;margin-bottom:4px;">ITEMS WON</div>
+        <div style="color:white;font-size:20px;font-weight:bold;">${data.itemsWon}</div>
+      </div>
+      <div>
+        <div style="color:#888;font-size:11px;margin-bottom:4px;">TOTAL P/L</div>
+        <div style="color:${data.totalProfit > 0 ? '#22c55e' : data.totalProfit < 0 ? '#ef4444' : 'white'};font-size:20px;font-weight:bold;">
+          ${data.totalProfit > 0 ? '+' : ''}${formatINR(data.totalProfit)}
+        </div>
+      </div>
+    </div>
+    
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ITEM</th>
+          <th>BID</th>
+          <th>ACTUAL VALUE</th>
+          <th>PROFIT/LOSS</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.details.map(d => {
+          const profitColor = d.profit > 0 ? '#22c55e' : d.profit < 0 ? '#ef4444' : '#888';
+          return `
+            <tr style="${!d.revealed ? 'opacity:0.6;' : ''}">
+              <td>
+                <div style="font-weight:bold;">${d.itemName}</div>
+                <div style="font-size:10px;color:#888;">${d.category} • #${d.itemNumber}</div>
+              </td>
+              <td style="text-align:center;font-size:14px;">
+                ${formatINR(d.bid)}
+              </td>
+              <td style="text-align:center;font-size:14px;">
+                ${d.revealed ? formatINR(d.actualValue) : '<span style="color:#666;">NOT REVEALED</span>'}
+              </td>
+              <td style="text-align:center;font-weight:bold;font-size:16px;color:${profitColor}">
+                ${d.revealed ? (d.profit > 0 ? '+' : '') + formatINR(d.profit) : '-'}
+              </td>
+              <td style="text-align:center;font-size:11px;text-transform:uppercase;">
+                ${d.status === 'locked' ? '🔒 Locked' : d.revealed ? '✓ Revealed' : '⏳ Pending'}
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+  
+  document.getElementById('team-details-modal').style.display = 'block';
+}
+
+function closeTeamDetails() {
+  document.getElementById('team-details-modal').style.display = 'none';
+}
+
+function toggleAutoRefresh() {
+  leaderboardAutoRefresh = !leaderboardAutoRefresh;
+  const btn = document.getElementById('toggle-auto-refresh');
+  
+  if (leaderboardAutoRefresh) {
+    btn.textContent = '⏸️ AUTO-REFRESH: ON';
+    btn.style.background = '#22c55e';
+    startAutoRefresh();
+  } else {
+    btn.textContent = '▶️ AUTO-REFRESH: OFF';
+    btn.style.background = '';
+    stopAutoRefresh();
+  }
+}
+
+function startAutoRefresh() {
+  if (leaderboardInterval) clearInterval(leaderboardInterval);
+  
+  leaderboardInterval = setInterval(() => {
+    refreshLeaderboard();
+  }, 10000);
+  
+  refreshLeaderboard();
+}
+
+function stopAutoRefresh() {
+  if (leaderboardInterval) {
+    clearInterval(leaderboardInterval);
+    leaderboardInterval = null;
+  }
+}
+
+function exportLeaderboard() {
+  if (!lastLeaderboardData) {
+    alert('No leaderboard data. Please refresh first.');
+    return;
+  }
+  
+  const sorted = Object.entries(lastLeaderboardData).sort((a, b) => b[1].totalProfit - a[1].totalProfit);
+  
+  let csv = 'Rank,Team,Items Won,Items Revealed,Total Spent,Points Left,Total P/L,Status\n';
+  
+  sorted.forEach(([team, data], idx) => {
+    const rank = idx + 1;
+    const status = data.capitalRemaining < 0 ? 'OVER LIMIT' : 'Within Budget';
+    csv += `${rank},${team},${data.itemsWon},${data.itemsRevealed},${data.totalSpent},${data.capitalRemaining},${data.totalProfit},${status}\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `leaderboard_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function checkSuspiciousActivity() {
+  database.ref('auctionBids').once('value', (bidsSnap) => {
+    database.ref('auctionItems').once('value', (itemsSnap) => {
+      const allBids = bidsSnap.val() || {};
+      const items = itemsSnap.val() || {};
+      
+      const suspicious = [];
+      
+      Object.entries(allBids).forEach(([team, teamBids]) => {
+        Object.entries(teamBids).forEach(([itemId, bid]) => {
+          const item = items[itemId];
+          if (item && item.reveal && item.revealedAt && bid.updatedAt) {
+            if (bid.updatedAt > item.revealedAt) {
+              const timeDiff = (bid.updatedAt - item.revealedAt) / 1000;
+              suspicious.push({
+                team,
+                itemName: item.name,
+                itemId,
+                bidAmount: bid.bid,
+                actualValue: item.actualValue,
+                timeDiff,
+                profit: item.actualValue - bid.bid
+              });
+            }
+          }
+        });
+      });
+      
+      if (suspicious.length === 0) {
+        document.getElementById('suspicious-content').innerHTML = `
+          <div style="text-align:center;padding:40px;">
+            <div style="font-size:48px;margin-bottom:16px;">✓</div>
+            <div style="color:#22c55e;font-size:18px;font-weight:bold;">NO SUSPICIOUS ACTIVITY DETECTED</div>
+            <div style="color:#888;font-size:12px;margin-top:8px;">All bids were entered before reveal or within acceptable timeframe.</div>
+          </div>
+        `;
+      } else {
+        const html = `
+          <div style="margin-bottom:20px;padding:16px;background:#4a0000;border:1px solid #ef4444;border-radius:8px;">
+            <div style="color:#ef4444;font-size:16px;font-weight:bold;">⚠️ ${suspicious.length} SUSPICIOUS ${suspicious.length === 1 ? 'ACTIVITY' : 'ACTIVITIES'} DETECTED</div>
+            <div style="color:#888;font-size:12px;margin-top:4px;">Bids changed after actual value was revealed</div>
+          </div>
+          
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>TEAM</th>
+                <th>ITEM</th>
+                <th>BID</th>
+                <th>ACTUAL</th>
+                <th>PROFIT</th>
+                <th>TIME AFTER REVEAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${suspicious.map(s => `
+                <tr style="background:#4a0000;">
+                  <td style="font-weight:bold;">${s.team}</td>
+                  <td>${s.itemName}</td>
+                  <td style="text-align:center;">${formatINR(s.bidAmount)}</td>
+                  <td style="text-align:center;">${formatINR(s.actualValue)}</td>
+                  <td style="text-align:center;color:${s.profit > 0 ? '#22c55e' : '#ef4444'};">
+                    ${s.profit > 0 ? '+' : ''}${formatINR(s.profit)}
+                  </td>
+                  <td style="text-align:center;color:#ef4444;font-weight:bold;">
+                    +${s.timeDiff.toFixed(0)}s
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div style="margin-top:20px;padding:16px;background:#1a1a1a;border-radius:8px;">
+            <div style="color:#888;font-size:12px;line-height:1.6;">
+              <strong>RECOMMENDED ACTION:</strong><br>
+              • Review these teams manually<br>
+              • Consider if changes were within acceptable grace period (30 seconds)<br>
+              • For changes >30s after reveal, consider penalties or disqualification<br>
+              • Export this report for record keeping
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('suspicious-content').innerHTML = html;
+      }
+      
+      document.getElementById('suspicious-modal').style.display = 'block';
+    });
+  });
+}
+
+function closeSuspiciousModal() {
+  document.getElementById('suspicious-modal').style.display = 'none';
 }
 
 function initializeStates(){
@@ -1239,6 +1755,7 @@ async function initialize() {
       setTeamList(["ALPHA", "BETA", "GAMMA"]);
     }
     render();
+    refreshLeaderboard();
   });
 }
 
