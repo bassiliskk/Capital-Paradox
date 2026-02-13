@@ -193,31 +193,6 @@
             text-transform: uppercase;
         }
 
-        .side-labels {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: none;
-            gap: 20px;
-            flex-direction: column;
-            z-index: 2;
-        }
-
-        .side-labels a {
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 0.4em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.4);
-            transition: color 0.3s ease;
-        }
-
-        .side-labels a:hover {
-            color: rgba(220, 38, 38, 0.9);
-        }
 
         .ticker-strip {
             border-top: 1px solid rgba(220, 38, 38, 0.25);
@@ -366,9 +341,6 @@
             }
         }
 
-        @media (min-width: 1100px) {
-            .side-labels { display: flex; }
-        }
     </style>
 </head>
 <body class="font-body content-padding">
@@ -409,11 +381,6 @@
 
     <!-- Hero Section -->
     <section class="hero-shell grid-bg" role="banner" id="hero">
-        <div class="side-labels" aria-hidden="true">
-            <a href="#hero">Intro</a>
-            <a href="#rounds">Rounds</a>
-            <a href="#overview">Overview</a>
-        </div>
         <div class="hero-atmosphere"></div>
         <div class="hero-noise"></div>
         <div class="hero-edges" aria-hidden="true"></div>
