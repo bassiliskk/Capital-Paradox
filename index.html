@@ -40,11 +40,251 @@
             color: #FAFAFA; 
             overflow-x: hidden; 
         }
+
+        :root {
+            --capital-red: #DC2626;
+            --blood-red: #991B1B;
+            --void-black: #050505;
+            --fog: rgba(250, 250, 250, 0.08);
+        }
         
         .grid-bg {
-            background-image: linear-gradient(rgba(220, 38, 38, 0.03) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(220, 38, 38, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
+            background-image:
+                linear-gradient(rgba(220, 38, 38, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(220, 38, 38, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .hero-shell {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 20px 80px;
+            overflow: hidden;
+        }
+
+        .hero-atmosphere {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 10% 30%, rgba(220, 38, 38, 0.22), transparent 50%),
+                radial-gradient(circle at 85% 60%, rgba(220, 38, 38, 0.16), transparent 60%),
+                linear-gradient(120deg, rgba(5, 5, 5, 0.96), rgba(5, 5, 5, 0.85));
+            opacity: 0.8;
+        }
+
+        .hero-noise {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 3px 3px;
+            mix-blend-mode: screen;
+            opacity: 0.12;
+        }
+
+        .hero-edges {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-edges::before,
+        .hero-edges::after {
+            content: '';
+            position: absolute;
+            width: 45vw;
+            height: 45vw;
+            max-width: 520px;
+            max-height: 520px;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.14), transparent 60%);
+            filter: blur(0.5px);
+        }
+
+        .hero-edges::before {
+            top: -20%;
+            left: -10%;
+            transform: rotate(-8deg);
+        }
+
+        .hero-edges::after {
+            bottom: -25%;
+            right: -10%;
+            transform: rotate(12deg);
+        }
+
+        .scanlines {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.04),
+                rgba(255, 255, 255, 0.04) 1px,
+                transparent 1px,
+                transparent 4px
+            );
+            opacity: 0.08;
+            mix-blend-mode: screen;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .mega-title {
+            font-size: clamp(4rem, 14vw, 12rem);
+            letter-spacing: -0.04em;
+            text-transform: uppercase;
+        }
+
+        .editorial-wrap {
+            display: grid;
+            gap: 40px;
+        }
+
+        .divider-line {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.6), transparent);
+        }
+
+        .stagger-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .stagger-card {
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            background: rgba(5, 5, 5, 0.6);
+            padding: 18px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .stagger-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(220, 38, 38, 0.6);
+        }
+
+        .marquee {
+            display: flex;
+            gap: 32px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            opacity: 0.7;
+            animation: marquee 18s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .section-shell {
+            padding: 90px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .side-labels {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            gap: 20px;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .side-labels a {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            transition: color 0.3s ease;
+        }
+
+        .side-labels a:hover {
+            color: rgba(220, 38, 38, 0.9);
+        }
+
+        .ticker-strip {
+            border-top: 1px solid rgba(220, 38, 38, 0.25);
+            border-bottom: 1px solid rgba(220, 38, 38, 0.25);
+            background: rgba(5, 5, 5, 0.7);
+            padding: 14px 0;
+            overflow: hidden;
+        }
+
+        .ticker-track {
+            display: inline-flex;
+            gap: 28px;
+            align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0.8;
+            animation: ticker 22s linear infinite;
+        }
+
+        .ticker-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(220, 38, 38, 0.7);
+            display: inline-block;
+        }
+
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .abstract-block {
+            position: relative;
+            min-height: 280px;
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            background:
+                linear-gradient(135deg, rgba(220, 38, 38, 0.08), transparent 60%),
+                linear-gradient(225deg, rgba(220, 38, 38, 0.06), transparent 55%),
+                rgba(5, 5, 5, 0.6);
+            overflow: hidden;
+        }
+
+        .abstract-block::before,
+        .abstract-block::after {
+            content: '';
+            position: absolute;
+            border: 1px solid rgba(220, 38, 38, 0.25);
+            background: rgba(220, 38, 38, 0.04);
+            transform: rotate(8deg);
+        }
+
+        .abstract-block::before {
+            width: 260px;
+            height: 260px;
+            top: -60px;
+            right: 10%;
+        }
+
+        .abstract-block::after {
+            width: 200px;
+            height: 200px;
+            bottom: -40px;
+            left: 12%;
+            transform: rotate(-12deg);
         }
         
         .nav-link {
@@ -72,6 +312,10 @@
             text-shadow: 0 0 40px rgba(220, 38, 38, 0.8), 0 0 80px rgba(220, 38, 38, 0.4);
             filter: drop-shadow(0 4px 12px rgba(0,0,0,0.9));
             z-index: 20;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .marquee { animation: none; }
         }
         
         /* Screen reader only text */
@@ -111,23 +355,37 @@
         @media (min-width: 769px) {
             .mobile-nav { display: none; }
         }
+
+        @media (min-width: 900px) {
+            .editorial-wrap {
+                grid-template-columns: 1.1fr 0.9fr;
+                align-items: start;
+            }
+            .stagger-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1100px) {
+            .side-labels { display: flex; }
+        }
     </style>
 </head>
 <body class="font-body content-padding">
 
-    <!-- Desktop Navigation -->
-    <nav class="fixed top-0 w-full z-50 bg-void-black/95 backdrop-blur-md border-b border-capital-red/20" role="navigation" aria-label="Main navigation">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Top Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-void-black/85 backdrop-blur-md border-b border-capital-red/20" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-6">
             <div class="flex justify-between items-center h-20">
                 <a href="index.html" class="flex items-center space-x-2 group" aria-label="CAPITAL Paradox Home">
                     <span class="font-display text-3xl tracking-wider text-white group-hover:text-capital-red transition-colors">CAPITAL</span>
                     <span class="font-script text-2xl text-capital-red -rotate-6 transform origin-bottom-left group-hover:rotate-0 transition-transform">Paradox</span>
                 </a>
-                <div class="hidden md:flex space-x-8 font-mono text-sm tracking-widest">
-                    <a href="index.html" class="nav-link text-white py-2" aria-current="page">HOME</a>
-                    <a href="rounds.html" class="nav-link text-gray-400 hover:text-white py-2 transition-colors">ROUNDS</a>
-                    <a href="rules.html" class="nav-link text-gray-400 hover:text-white py-2 transition-colors">RULES</a>
-                    <a href="contact.html" class="text-capital-red hover:text-white transition-colors border border-capital-red px-6 py-2 hover:bg-capital-red">REGISTER</a>
+                <div class="hidden md:flex items-center space-x-8 font-mono text-xs tracking-[0.3em] uppercase">
+                    <a href="index.html" class="nav-link text-white py-2" aria-current="page">Home</a>
+                    <a href="rounds.html" class="nav-link text-gray-400 hover:text-white py-2 transition-colors">Rounds</a>
+                    <a href="rules.html" class="nav-link text-gray-400 hover:text-white py-2 transition-colors">Rules</a>
+                    <a href="contact.html" class="text-capital-red hover:text-white transition-colors border border-capital-red px-5 py-2 hover:bg-capital-red">Register</a>
                 </div>
                 <button 
                     class="md:hidden text-white" 
@@ -140,35 +398,43 @@
             </div>
         </div>
         <div id="mobile-menu" class="hidden md:hidden bg-void-black border-b border-capital-red/20">
-            <div class="px-4 pt-2 pb-6 space-y-2 font-mono">
-                <a href="index.html" class="block py-2 text-white">HOME</a>
-                <a href="rounds.html" class="block py-2 text-gray-400 hover:text-white">ROUNDS</a>
-                <a href="rules.html" class="block py-2 text-gray-400 hover:text-white">RULES</a>
-                <a href="contact.html" class="block py-2 text-capital-red">REGISTER</a>
+            <div class="px-6 pt-2 pb-6 space-y-2 font-mono text-xs tracking-[0.3em] uppercase">
+                <a href="index.html" class="block py-2 text-white">Home</a>
+                <a href="rounds.html" class="block py-2 text-gray-400 hover:text-white">Rounds</a>
+                <a href="rules.html" class="block py-2 text-gray-400 hover:text-white">Rules</a>
+                <a href="contact.html" class="block py-2 text-capital-red">Register</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="relative min-h-screen flex items-center justify-center grid-bg pt-20" role="banner">
-        <div class="relative z-10 max-w-6xl mx-auto px-4 text-center">
-            <div class="mb-6 inline-block relative">
-                <h1 class="font-display text-[15vw] md:text-[12rem] leading-none tracking-tighter text-white select-none relative z-10">
-                    CAPITAL
-                </h1>
-                <span class="font-script text-[10vw] md:text-[7rem] text-capital-red absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-[-5deg] pointer-events-none paradox-glow whitespace-nowrap" aria-hidden="true">
+    <section class="hero-shell grid-bg" role="banner" id="hero">
+        <div class="side-labels" aria-hidden="true">
+            <a href="#hero">Intro</a>
+            <a href="#rounds">Rounds</a>
+            <a href="#overview">Overview</a>
+        </div>
+        <div class="hero-atmosphere"></div>
+        <div class="hero-noise"></div>
+        <div class="hero-edges" aria-hidden="true"></div>
+        <div class="scanlines" aria-hidden="true"></div>
+
+        <div class="relative z-10 max-w-6xl mx-auto text-center">
+            <div class="text-xs font-mono tracking-[0.6em] text-capital-red uppercase mb-6">Finance Championship</div>
+            <div class="relative">
+                <h1 class="font-display mega-title leading-none text-white select-none">Capital</h1>
+                <span class="font-script text-[14vw] md:text-[7rem] text-capital-red absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-[-6deg] pointer-events-none paradox-glow whitespace-nowrap" aria-hidden="true">
                     Paradox
                 </span>
             </div>
-            
-            <div class="mt-8 max-w-2xl mx-auto space-y-6">
-                <p class="text-gray-300 text-lg md:text-xl font-light leading-relaxed border-t border-b border-capital-red/20 py-6 px-4">
+
+            <div class="mt-10 max-w-2xl mx-auto">
+                <p class="text-gray-200 text-lg md:text-xl font-light leading-relaxed border border-capital-red/20 px-6 py-6 bg-void-black/60">
                     Four rounds. Asymmetric information. Delayed consequences. 
                     <br>
                     <span class="text-white font-semibold">Time is not linear. Neither is value.</span>
                 </p>
-                
-                <div class="flex flex-col md:flex-row gap-4 justify-center items-center pt-4">
+                <div class="flex flex-col md:flex-row gap-4 justify-center items-center pt-8">
                     <a href="rounds.html" class="group relative px-8 py-4 bg-capital-red text-white font-mono font-bold tracking-wider overflow-hidden transition-all hover:scale-105 w-full md:w-auto text-center">
                         <span class="relative z-10">EXPLORE ROUNDS</span>
                         <div class="absolute inset-0 bg-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 mix-blend-difference"></div>
@@ -179,40 +445,89 @@
                 </div>
             </div>
 
-            <!-- Round Preview Grid -->
-            <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto px-4">
-                <a href="rounds.html#round1" class="border border-gray-800 p-4 hover:border-capital-red transition-colors cursor-pointer group" aria-label="Go to Round 1: Wolves of Wall Street">
+            <div class="mt-16 overflow-hidden">
+                <div class="marquee">
+                    <span>Time Is Not Linear</span>
+                    <span>Asymmetric Information</span>
+                    <span>Delayed Consequences</span>
+                    <span>Time Is Not Linear</span>
+                    <span>Asymmetric Information</span>
+                    <span>Delayed Consequences</span>
+                </div>
+            </div>
+
+            <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto px-2" id="rounds">
+                <a href="rounds.html#round1" class="stagger-card text-left group" aria-label="Go to Round 1: Wolves of Wall Street">
                     <span class="font-mono text-xs text-capital-red block mb-2">01</span>
                     <span class="font-display text-sm md:text-lg text-white group-hover:text-capital-red leading-tight block">WOLVES OF WALL STREET</span>
                 </a>
-                <a href="rounds.html#round2" class="border border-gray-800 p-4 hover:border-capital-red transition-colors cursor-pointer group" aria-label="Go to Round 2: Divided Loyalties">
+                <a href="rounds.html#round2" class="stagger-card text-left group" aria-label="Go to Round 2: Divided Loyalties">
                     <span class="font-mono text-xs text-capital-red block mb-2">02</span>
                     <span class="font-display text-sm md:text-lg text-white group-hover:text-capital-red leading-tight block">DIVIDED LOYALTIES</span>
                 </a>
-                <a href="rounds.html#round3" class="border border-gray-800 p-4 hover:border-capital-red transition-colors cursor-pointer group" aria-label="Go to Round 3: Barter Trade">
+                <a href="rounds.html#round3" class="stagger-card text-left group" aria-label="Go to Round 3: Barter Trade">
                     <span class="font-mono text-xs text-capital-red block mb-2">03</span>
                     <span class="font-display text-sm md:text-lg text-white group-hover:text-capital-red leading-tight block">BARTER TRADE</span>
                 </a>
-                <a href="rounds.html#round4" class="border border-gray-800 p-4 hover:border-capital-red transition-colors cursor-pointer group" aria-label="Go to Round 4: Insider's Dilemma">
+                <a href="rounds.html#round4" class="stagger-card text-left group" aria-label="Go to Round 4: Insider's Dilemma">
                     <span class="font-mono text-xs text-capital-red block mb-2">04</span>
                     <span class="font-display text-sm md:text-lg text-white group-hover:text-capital-red leading-tight block">INSIDER'S DILEMMA</span>
                 </a>
             </div>
         </div>
-
-        <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-void-black to-transparent"></div>
     </section>
 
-    <!-- Brief Overview -->
-    <section class="py-20 bg-void-black border-t border-capital-red/10">
-        <div class="max-w-4xl mx-auto px-4 text-center">
-            <span class="font-mono text-capital-red text-sm tracking-[0.3em] uppercase">The Championship</span>
-            <h2 class="font-display text-4xl md:text-6xl text-white mt-4 mb-8">SURVIVE THE MARKET</h2>
-            <p class="text-gray-300 text-lg leading-relaxed font-light px-4">
-                A temporal finance simulation where teams navigate four distinct market paradigms. 
-                From high-frequency trading volatility to ethical collapse under information asymmetry, 
-                only those who master delayed consequences will emerge with capital intact.
-            </p>
+    <section class="ticker-strip">
+        <div class="max-w-6xl mx-auto overflow-hidden">
+            <div class="ticker-track">
+                <span>Signal Delay 04:12</span><span class="ticker-dot"></span>
+                <span>Liquidity Shock</span><span class="ticker-dot"></span>
+                <span>Asymmetry Index 9.4</span><span class="ticker-dot"></span>
+                <span>Temporal Spread 0.7</span><span class="ticker-dot"></span>
+                <span>Signal Delay 04:12</span><span class="ticker-dot"></span>
+                <span>Liquidity Shock</span><span class="ticker-dot"></span>
+                <span>Asymmetry Index 9.4</span><span class="ticker-dot"></span>
+                <span>Temporal Spread 0.7</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell bg-void-black border-t border-capital-red/10" id="overview">
+        <div class="max-w-6xl mx-auto editorial-wrap">
+            <div>
+                <span class="font-mono text-capital-red text-xs tracking-[0.4em] uppercase">The Championship</span>
+                <h2 class="font-display section-title text-white mt-4">Survive The Market</h2>
+                <div class="divider-line my-6"></div>
+                <p class="text-gray-300 text-lg leading-relaxed font-light">
+                    A temporal finance simulation where teams navigate four distinct market paradigms. 
+                    From high-frequency trading volatility to ethical collapse under information asymmetry, 
+                    only those who master delayed consequences will emerge with capital intact.
+                </p>
+            </div>
+            <div class="stagger-grid">
+                <div class="stagger-card">
+                    <p class="font-mono text-xs text-capital-red tracking-[0.3em] uppercase mb-2">Core Signal</p>
+                    <p class="text-gray-200 text-base">Time-lagged information changes outcomes. Your strategy must account for the delay.</p>
+                </div>
+                <div class="stagger-card">
+                    <p class="font-mono text-xs text-capital-red tracking-[0.3em] uppercase mb-2">Core Signal</p>
+                    <p class="text-gray-200 text-base">Every round distorts value. Read the distortion before you commit.</p>
+                </div>
+                <div class="stagger-card">
+                    <p class="font-mono text-xs text-capital-red tracking-[0.3em] uppercase mb-2">Core Signal</p>
+                    <p class="text-gray-200 text-base">Asymmetric intel is currency. Spend it or weaponize it.</p>
+                </div>
+                <div class="stagger-card">
+                    <p class="font-mono text-xs text-capital-red tracking-[0.3em] uppercase mb-2">Core Signal</p>
+                    <p class="text-gray-200 text-base">Delayed consequences compound. Survive the first hit to win.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell bg-void-black">
+        <div class="max-w-6xl mx-auto">
+            <div class="abstract-block"></div>
         </div>
     </section>
 

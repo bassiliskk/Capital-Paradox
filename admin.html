@@ -656,7 +656,7 @@ async function checkAdminAuth() {
 }
 
 const STATES = ["revoked","access","passed","eliminated"];
-const DEFAULT_ITEMS_VERSION = "2026-02-11-v2";
+const DEFAULT_ITEMS_VERSION = "2026-02-13-v1";
 const DEFAULT_ITEMS_VERSION_KEY = "capital_defaults_version";
 const AUCTION_CONFIG_PATH = "auctionConfig";
 const AUCTION_ITEMS_PATH = "auctionItems";
@@ -759,49 +759,49 @@ function listenAuctionStatus() {
 // ==========================================
 
 const DEFAULT_AUCTION_ITEMS = [
-  { number: 1, category: "Antiques", name: "Ming Dynasty Vase", actualValue: 5600 },
-  { number: 2, category: "Antiques", name: "Samurai Sword", actualValue: 6400 },
-  { number: 3, category: "Antiques", name: "Crown Replica", actualValue: 6000 },
-  { number: 4, category: "Antiques", name: "Pharaoh Statue", actualValue: 5800 },
-  { number: 5, category: "Antiques", name: "Historical Dossier", actualValue: 12375 },
-  { number: 6, category: "Antiques", name: "Vintage Typewriter", actualValue: 6000 },
-  { number: 7, category: "Antiques", name: "Pocket Watch", actualValue: 6750 },
-  { number: 8, category: "Antiques", name: "Scroll Replica", actualValue: 5250 },
-  { number: 9, category: "Antiques", name: "Gramophone", actualValue: 10200 },
-  { number: 10, category: "Antiques", name: "Brass Telescope", actualValue: 9000 },
-  { number: 11, category: "Antiques", name: "Bronze Coin", actualValue: 7200 },
-  { number: 12, category: "Antiques", name: "Old Globe Map", actualValue: 22000 },
-  { number: 13, category: "Antiques", name: "Shield", actualValue: 24000 },
-  { number: 14, category: "Antiques", name: "Buddha Sculpture", actualValue: 26000 },
-  { number: 16, category: "Stocks", name: "Titanic Shipping", actualValue: 6800 },
-  { number: 17, category: "Stocks", name: "Vintage Rail Bonds", actualValue: 5600 },
-  { number: 18, category: "Stocks", name: "Dot-Com Stock", actualValue: 6400 },
-  { number: 19, category: "Stocks", name: "Old Coal Co.", actualValue: 5400 },
-  { number: 20, category: "Stocks", name: "Subprime Mortgage Fund", actualValue: 11250 },
-  { number: 21, category: "Stocks", name: "Government Bond", actualValue: 7500 },
-  { number: 22, category: "Stocks", name: "Blue-Chip Reliant", actualValue: 9750 },
-  { number: 23, category: "Stocks", name: "Traditional Bank", actualValue: 15000 },
-  { number: 24, category: "Stocks", name: "FMCG Stock", actualValue: 13800 },
-  { number: 25, category: "Stocks", name: "Green Energy", actualValue: 18000 },
-  { number: 26, category: "Stocks", name: "AI Tech", actualValue: 35000 },
-  { number: 27, category: "Stocks", name: "Space Startup", actualValue: 38000 },
-  { number: 28, category: "Stocks", name: "Crypto NeoCoin", actualValue: 36000 },
-  { number: 29, category: "Stocks", name: "Biotech Innovator", actualValue: 33000 },
-  { number: 30, category: "Goods", name: "Luxury Wine", actualValue: 5600 },
-  { number: 31, category: "Goods", name: "Antique Furniture", actualValue: 5400 },
-  { number: 32, category: "Goods", name: "Vintage Car Model", actualValue: 6000 },
-  { number: 33, category: "Goods", name: "Ornamental Sword", actualValue: 4800 },
-  { number: 34, category: "Goods", name: "Exotic Perfume", actualValue: 10875 },
-  { number: 35, category: "Goods", name: "Silk Bundle", actualValue: 7125 },
-  { number: 36, category: "Goods", name: "Ancient Spices", actualValue: 6375 },
-  { number: 37, category: "Goods", name: "Copper Bars", actualValue: 12000 },
-  { number: 38, category: "Goods", name: "Artisan Pottery", actualValue: 9000 },
-  { number: 39, category: "Goods", name: "Gold Bar", actualValue: 22200 },
-  { number: 40, category: "Goods", name: "Rare Gemstones", actualValue: 34000 },
-  { number: 41, category: "Goods", name: "Silver Bullion", actualValue: 29000 },
-  { number: 42, category: "Goods", name: "Energy Battery", actualValue: 32000 },
-  { number: 43, category: "Goods", name: "Premium Artwork", actualValue: 31000 }
-];
+    { number: 1, category: "Stocks", name: "Space Startup", actualValue: 38000 },
+    { number: 2, category: "Goods", name: "Silk Bundle", actualValue: 7125 },
+    { number: 3, category: "Stocks", name: "Blue-Chip Reliant", actualValue: 9750 },
+    { number: 4, category: "Stocks", name: "Government Bond", actualValue: 7500 },
+    { number: 5, category: "Stocks", name: "AI Tech", actualValue: 35000 },
+    { number: 6, category: "Goods", name: "Silver Bullion", actualValue: 29000 },
+    { number: 7, category: "Stocks", name: "FMCG Stock", actualValue: 13800 },
+    { number: 8, category: "Goods", name: "Luxury Wine", actualValue: 5600 },
+    { number: 9, category: "Goods", name: "Exotic Perfume", actualValue: 10875 },
+    { number: 10, category: "Goods", name: "Vintage Car Model", actualValue: 6000 },
+    { number: 11, category: "Antiques", name: "Shield", actualValue: 24000 },
+    { number: 12, category: "Antiques", name: "Pocket Watch", actualValue: 6750 },
+    { number: 13, category: "Goods", name: "Gold Bar", actualValue: 22200 },
+    { number: 14, category: "Antiques", name: "Crown Replica", actualValue: 6000 },
+    { number: 15, category: "Antiques", name: "Ming Dynasty Vase", actualValue: 5600 },
+    { number: 16, category: "Antiques", name: "Gramophone", actualValue: 10200 },
+    { number: 17, category: "Goods", name: "Ancient Spices", actualValue: 6375 },
+    { number: 18, category: "Stocks", name: "Titanic Shipping", actualValue: 6800 },
+    { number: 19, category: "Goods", name: "Rare Gemstones", actualValue: 34000 },
+    { number: 20, category: "Stocks", name: "Traditional Bank", actualValue: 15000 },
+    { number: 21, category: "Antiques", name: "Old Globe Map", actualValue: 22000 },
+    { number: 22, category: "Goods", name: "Copper Bars", actualValue: 12000 },
+    { number: 23, category: "Stocks", name: "Green Energy", actualValue: 18000 },
+    { number: 24, category: "Stocks", name: "Vintage Rail Bonds", actualValue: 5600 },
+    { number: 25, category: "Goods", name: "Premium Artwork", actualValue: 31000 },
+    { number: 26, category: "Antiques", name: "Pharaoh Statue", actualValue: 5800 },
+    { number: 27, category: "Antiques", name: "Scroll Replica", actualValue: 5250 },
+    { number: 28, category: "Antiques", name: "Vintage Typewriter", actualValue: 6000 },
+    { number: 29, category: "Stocks", name: "Crypto NeoCoin", actualValue: 36000 },
+    { number: 30, category: "Stocks", name: "Dot-Com Stock", actualValue: 6400 },
+    { number: 31, category: "Goods", name: "Ornamental Sword", actualValue: 4800 },
+    { number: 32, category: "Goods", name: "Energy Battery", actualValue: 32000 },
+    { number: 33, category: "Antiques", name: "Samurai Sword", actualValue: 6400 },
+    { number: 34, category: "Antiques", name: "Buddha Sculpture", actualValue: 26000 },
+    { number: 35, category: "Antiques", name: "Bronze Coin", actualValue: 7200 },
+    { number: 36, category: "Goods", name: "Artisan Pottery", actualValue: 9000 },
+    { number: 37, category: "Stocks", name: "Subprime Mortgage", actualValue: 11250 },
+    { number: 38, category: "Stocks", name: "Biotech Innovator", actualValue: 33000 },
+    { number: 39, category: "Antiques", name: "Historical Dossier", actualValue: 12375 },
+    { number: 40, category: "Stocks", name: "Old Coal Co.", actualValue: 5400 },
+    { number: 41, category: "Antiques", name: "Brass Telescope", actualValue: 9000 },
+    { number: 42, category: "Goods", name: "Antique Furniture", actualValue: 5400 }
+  ];
 
 function normalizeBudgetState(data) {
   const raw = data || {};
