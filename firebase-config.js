@@ -12,14 +12,13 @@
 // ==========================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA-jEcqHqL0NyYaRu1WwyBRmuxskj8IS-8",
+  apiKey: "YOUR_API_KEY",
   authDomain: "capital-paradox.firebaseapp.com",
   databaseURL: "https://capital-paradox-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "capital-paradox",
-  storageBucket: "capital-paradox.firebasestorage.app",
-  messagingSenderId: "1088881259421",
-  appId: "1:1088881259421:web:75187fa72bbfcd7dc1f574",
-  measurementId: "G-MNM9JZ1W14"
+  storageBucket: "capital-paradox.appspot.com",
+  messagingSenderId: "YOUR_NUMBER",
+  appId: "YOUR_APP_ID"
 };
 
 // Initialize Firebase
@@ -100,8 +99,11 @@ async function checkActiveSession(teamCode) {
         
         if (!session) return null;
         
-        // Check if session has timed out
-        const timeSinceHeartbeat = Date.now() - session.lastHeartbeat;
+        // Compatible with both rounds.html format (sessionId/lastHeartbeat) 
+        // and auction.html format (clientId/lastSeen)
+        const lastActivity = session.lastHeartbeat || session.lastSeen || 0;
+        const timeSinceHeartbeat = Date.now() - lastActivity;
+        
         if (timeSinceHeartbeat > SESSION_TIMEOUT) {
             // Session expired, remove it
             await database.ref(`activeSessions/${teamCode}`).remove();
