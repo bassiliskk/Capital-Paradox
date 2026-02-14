@@ -589,13 +589,21 @@ body { background-color: #050505; color: #FAFAFA; }
                 icon: "trending-up",
                 description: "This is a competitive auction testing your ability to assess value and manage resources under pressure. Every decision carries immediate costs and potential future consequences.",
                 overview: {
-                    teamsCapital: [
-                        "Each team consists of two members.",
-                        "Starting points: 100,000 per team.",
-                        "This is your sole resource for the entire round."
-                    ],
-                    availableAssets: "Various strategic assets will be available for purchase through the auction, each with assigned values and potential applications. Some assets may carry hidden consequences that will only be revealed in subsequent rounds.",
-                    warning: "Not all items are equal. Strategic value may differ significantly from face value."
+                    sections: [
+                        {
+                            title: "TEAMS & POINTS",
+                            items: [
+                                "Each team consists of two members.",
+                                "Starting points: 100,000 per team.",
+                                "This is your sole resource for the entire round."
+                            ]
+                        },
+                        {
+                            title: "AVAILABLE ASSETS",
+                            text: "Various strategic assets will be available for purchase through the auction, each with assigned values and potential applications. Some assets may carry hidden consequences that will only be revealed in subsequent rounds.",
+                            note: "Not all items are equal. Strategic value may differ significantly from face value."
+                        }
+                    ]
                 },
                 strategicChoice: {
                     title: "The Strategic Choice",
@@ -604,6 +612,12 @@ body { background-color: #050505; color: #FAFAFA; }
                         "There is no \"safe option.\"",
                         "Each team must buy at least 2 items."
                     ]
+                },
+                cta: {
+                    title: "GO TO THE AUCTION",
+                    label: "OPEN AUCTION",
+                    href: "auction.html",
+                    note: "Access opens when the admin unlocks the auction."
                 },
                 finalWarning: {
                     lines: [
@@ -620,13 +634,48 @@ body { background-color: #050505; color: #FAFAFA; }
                 concept: "INDIVIDUAL PERFORMANCE & TRUST",
                 icon: "split",
                 description: "Team members are separated and tested individually under pressure. Outcomes hinge on performance benchmarks and whether a surviving player chooses to rebuild the partnership at a cost.",
-                outcomes: [
-                    { label: "Both below benchmark", value: "ELIMINATION", color: "text-red-500" },
-                    { label: "One strong, one moderate", value: "SOLO ADVANCE", color: "text-yellow-500" },
-                    { label: "Both strong", value: "TEAM ADVANCES", color: "text-green-500" }
-                ],
-                special: "The Revival Gamble: Reinstate an eliminated partner at a cost to points or advantages.",
-                quote: "\"Rebuild the team, or bank the edge.\""
+                overview: {
+                    sections: [
+                        {
+                            title: "TEAM SEPARATION",
+                            items: [
+                                "Each team splits into two individual players.",
+                                "Players face analytical, time-pressure, and ethical tasks.",
+                                "No communication is allowed during the round."
+                            ]
+                        },
+                        {
+                            title: "BENCHMARK SCORING",
+                            items: [
+                                "Each player is scored against a fixed benchmark.",
+                                "Players do not see their partner’s performance."
+                            ]
+                        },
+                        {
+                            title: "OUTCOME MATRIX",
+                            items: [
+                                "Both below benchmark: Team eliminated.",
+                                "One strong, one moderate: Strong player advances solo.",
+                                "Both strong: Team advances together."
+                            ]
+                        }
+                    ]
+                },
+                strategicChoice: {
+                    title: "The Strategic Choice",
+                    points: [
+                        "If a partner is eliminated, decide to revive or proceed alone.",
+                        "Revival costs points, advantages, or privileges set by the game.",
+                        "The choice is made without knowing if future rounds favor teams or solo play."
+                    ]
+                },
+                finalWarning: {
+                    lines: [
+                        "Trust is a resource. Spend it or save it.",
+                        "Reunion strengthens teamwork but drains leverage.",
+                        "A solo run can win fast or collapse alone."
+                    ]
+                }
             },
             {
                 id: 3,
@@ -635,8 +684,46 @@ body { background-color: #050505; color: #FAFAFA; }
                 concept: "RESOURCE ARBITRAGE",
                 icon: "refresh-cw",
                 description: "Teams receive unique resource portfolios with differing utilities and liquidity. Must negotiate with competitors to construct optimal portfolio.",
-                twist: "Mid-round shift: High-demand resources devalued. Obscure assets become critical.",
-                criteria: ["Portfolio value vs. benchmark", "Strategic coherence", "Risk exposure"]
+                overview: {
+                    sections: [
+                        {
+                            title: "RESOURCE PORTFOLIOS",
+                            items: [
+                                "Each team receives a different mix of assets.",
+                                "Liquidity and utility differ across portfolios.",
+                                "Trades are required to optimize value."
+                            ]
+                        },
+                        {
+                            title: "MARKET SHIFT",
+                            text: "Mid-round shift: High-demand resources devalued. Obscure assets become critical.",
+                            note: "Read distortions early or pay for them later."
+                        },
+                        {
+                            title: "EVALUATION",
+                            items: [
+                                "Portfolio value vs. benchmark",
+                                "Strategic coherence",
+                                "Risk exposure"
+                            ]
+                        }
+                    ]
+                },
+                strategicChoice: {
+                    title: "The Strategic Choice",
+                    points: [
+                        "Choose trade partners and timing under uncertainty.",
+                        "Balance liquidity, utility, and exposure in every exchange.",
+                        "Hold for control or trade for resilience."
+                    ]
+                },
+                finalWarning: {
+                    lines: [
+                        "Value moves fast. Liquidity moves faster.",
+                        "Overtrade and you bleed. Undertrade and you stall.",
+                        "The best portfolio is the one that survives the shift."
+                    ]
+                }
             },
             {
                 id: 4,
@@ -645,8 +732,46 @@ body { background-color: #050505; color: #FAFAFA; }
                 concept: "INFORMATION ASYMMETRY & RISK",
                 icon: "eye-off",
                 description: "This round is designed to evaluate analytical thinking, financial expertise, ethical reasoning, and composure under pressure. Participants are assessed on their ability to think independently, respond logically, and maintain consistency while demonstrating strong communication and presentation skills. The focus lies on testing strategic clarity, depth of understanding, teamwork alignment, and the confidence to defend well-structured financial conclusions before a judging panel.",
-                enforcement: "Post-decision probabilistic audit system. Illegal usage may yield returns or trigger penalties.",
-                defense: ["Financial rationale", "Risk assessment", "Ethical navigation"]
+                overview: {
+                    sections: [
+                        {
+                            title: "INTELLIGENCE FEED",
+                            items: [
+                                "Legitimate intel, misleading rumors, and non-public data are mixed.",
+                                "Source reliability is unknown.",
+                                "You must act without certainty."
+                            ]
+                        },
+                        {
+                            title: "AUDIT RISK",
+                            text: "Post-decision probabilistic audit system. Illegal usage may yield returns or trigger penalties.",
+                            note: "Ethical breaches can erase any advantage."
+                        },
+                        {
+                            title: "DEFENSE REQUIRED",
+                            items: [
+                                "Financial rationale",
+                                "Risk assessment",
+                                "Ethical navigation"
+                            ]
+                        }
+                    ]
+                },
+                strategicChoice: {
+                    title: "The Strategic Choice",
+                    points: [
+                        "Decide what to act on and what to discard.",
+                        "Build a defensible thesis under uncertainty.",
+                        "Own the consequences of every signal you trade."
+                    ]
+                },
+                finalWarning: {
+                    lines: [
+                        "Knowledge is power, but misuse is fatal.",
+                        "Short-term gains can trigger long-term penalties.",
+                        "Win clean or be erased."
+                    ]
+                }
             }
         ];
 
@@ -726,157 +851,66 @@ body { background-color: #050505; color: #FAFAFA; }
 
                     let contentHtml = '';
 
-                    // Round 1 - Wolves of Wall Street
-                    if(round.id === 1) {
-                        contentHtml = `
-                            <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
-                                <p>${round.description}</p>
+                    contentHtml = `
+                        <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
+                            <p>${round.description}</p>
 
-                                <!-- Teams & Capital -->
+                            ${round.overview && round.overview.sections ? round.overview.sections.map(section => `
                                 <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                    <p class="text-xs uppercase text-gray-500 mb-2">TEAMS & POINTS</p>
-                                    <ul class="space-y-2 text-gray-300 text-xs md:text-sm">
-                                        ${round.overview.teamsCapital.map(t => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${t}</li>`).join('')}
-                                    </ul>
+                                    <p class="text-xs uppercase text-gray-500 mb-2">${section.title}</p>
+                                    ${section.items ? `
+                                        <ul class="space-y-2 text-gray-300 text-xs md:text-sm">
+                                            ${section.items.map(item => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${item}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                    ${section.text ? `<p class="text-gray-300 text-xs md:text-sm mb-2">${section.text}</p>` : ''}
+                                    ${section.note ? `<p class="text-capital-red text-xs md:text-sm font-bold mt-2">${section.note}</p>` : ''}
                                 </div>
+                            `).join('') : ''}
 
-                                <!-- Available Assets -->
-                                <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                    <p class="text-xs uppercase text-gray-500 mb-2">AVAILABLE ASSETS</p>
-                                    <p class="text-gray-300 text-xs md:text-sm mb-2">${round.overview.availableAssets}</p>
-                                    <p class="text-capital-red text-xs md:text-sm font-bold mt-2">${round.overview.warning}</p>
-                                </div>
-
+                            ${round.cta ? `
                                 <div class="bg-gray-900/50 border border-capital-red/30 p-4 md:p-6 mt-6">
                                     <div class="flex flex-wrap items-center justify-between gap-3">
                                         <div>
-                                            <p class="font-mono text-xs uppercase text-gray-500">Auction Portal</p>
-                                            <h3 class="font-display text-xl md:text-2xl text-white">GO TO THE AUCTION</h3>
+                                            <p class="font-mono text-xs uppercase text-gray-500">Round Portal</p>
+                                            <h3 class="font-display text-xl md:text-2xl text-white">${round.cta.title}</h3>
                                         </div>
-                                        <a href="auction.html" class="bg-capital-red text-white font-mono px-6 py-3 hover:bg-white hover:text-capital-red transition-all">
-                                            OPEN AUCTION
+                                        <a href="${round.cta.href}" class="bg-capital-red text-white font-mono px-6 py-3 hover:bg-white hover:text-capital-red transition-all">
+                                            ${round.cta.label}
                                         </a>
                                     </div>
-                                    <p class="text-gray-400 text-xs mt-3">Access opens when the admin unlocks the auction.</p>
+                                    ${round.cta.note ? `<p class="text-gray-400 text-xs mt-3">${round.cta.note}</p>` : ''}
                                 </div>
+                            ` : ''}
 
-                                <!-- Read More Button -->
-                                <button onclick="toggleReadMore(${round.id})" class="read-more-btn flex items-center gap-2 text-capital-red font-mono text-xs hover:text-white transition-colors mt-4" aria-label="Read more about Round 1">
-                                    <span id="read-more-btn-${round.id}">READ MORE</span>
-                                    <i id="read-more-icon-${round.id}" data-lucide="chevron-down" class="w-4 h-4"></i>
-                                </button>
+                            <!-- Read More Button -->
+                            <button onclick="toggleReadMore(${round.id})" class="read-more-btn flex items-center gap-2 text-capital-red font-mono text-xs hover:text-white transition-colors mt-4" aria-label="Read more about Round ${round.id}">
+                                <span id="read-more-btn-${round.id}">READ MORE</span>
+                                <i id="read-more-icon-${round.id}" data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
 
-                                <!-- Expandable Content -->
-                                <div id="read-more-${round.id}" class="read-more-content space-y-4">
-                                    <!-- Strategic Choice -->
+                            <!-- Expandable Content -->
+                            <div id="read-more-${round.id}" class="read-more-content space-y-4">
+                                ${round.strategicChoice ? `
                                     <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
                                         <h3 class="font-display text-lg md:text-xl text-white mb-3">${round.strategicChoice.title}</h3>
                                         <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-2">
                                             ${round.strategicChoice.points.map(p => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${p}</li>`).join('')}
                                         </ul>
                                     </div>
+                                ` : ''}
 
-                                    <!-- Final Warning -->
+                                ${round.finalWarning ? `
                                     <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
                                         <h3 class="font-display text-lg md:text-xl text-capital-red mb-3">FINAL WARNING</h3>
                                         <div class="space-y-2">
                                             ${round.finalWarning.lines.map(line => `<p class="font-mono text-xs md:text-sm text-gray-300">${line}</p>`).join('')}
                                         </div>
                                     </div>
-                                </div>
+                                ` : ''}
                             </div>
-                        `;
-                    } else {
-                        // Other rounds content
-                        contentHtml = `
-                            <div class="grid md:grid-cols-2 gap-6 md:gap-8">
-                                <div class="space-y-4 text-gray-300 font-mono text-sm leading-relaxed">
-                                    <p>${round.description}</p>
-
-                                    ${round.mechanism ? `
-                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                            <p class="text-xs uppercase text-gray-500 mb-2">THE MECHANISM</p>
-                                            <ul class="space-y-2 text-gray-300 text-xs md:text-sm">
-                                                ${round.mechanism.map(m => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${m}</li>`).join('')}
-                                            </ul>
-                                        </div>
-                                    ` : ''}
-
-                                    ${round.outcomes ? `
-                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                            <p class="text-xs uppercase text-gray-500 mb-2">OUTCOME MATRIX</p>
-                                            <div class="space-y-1 text-xs md:text-sm">
-                                                ${round.outcomes.map(o => `
-                                                    <div class="flex justify-between border-b border-gray-800 pb-1 last:border-0">
-                                                        <span class="text-gray-300 text-xs">${o.label}</span>
-                                                        <span class="${o.color} font-bold text-xs">${o.value}</span>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        </div>
-                                    ` : ''}
-
-                                    ${round.twist ? `
-                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                            <p class="text-xs uppercase text-gray-500 mb-1">THE TWIST</p>
-                                            <p class="text-gray-300 text-xs md:text-sm">${round.twist}</p>
-                                        </div>
-                                    ` : ''}
-
-                                    ${round.enforcement ? `
-                                        <div class="bg-gray-900/50 p-3 md:p-4 border-l-2 border-capital-red">
-                                            <p class="text-xs uppercase text-gray-500 mb-1">ENFORCEMENT</p>
-                                            <p class="text-gray-300 text-xs md:text-sm">${round.enforcement}</p>
-                                        </div>
-                                    ` : ''}
-                                </div>
-
-                                <div class="space-y-3 md:space-y-4">
-                                    ${round.elimination ? `
-                                        <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
-                                            <h3 class="font-display text-lg md:text-xl text-white mb-2">ELIMINATION TRIGGERS</h3>
-                                            <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-1">
-                                                ${round.elimination.map(e => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${e}</li>`).join('')}
-                                            </ul>
-                                        </div>
-                                    ` : ''}
-
-                                    ${round.criteria ? `
-                                        <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
-                                            <h3 class="font-display text-lg md:text-xl text-capital-red mb-2">EVALUATION CRITERIA</h3>
-                                            <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-1">
-                                                ${round.criteria.map(c => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${c}</li>`).join('')}
-                                            </ul>
-                                        </div>
-                                    ` : ''}
-
-                                    ${round.defense ? `
-                                        <div class="bg-capital-red/10 border border-capital-red p-4 md:p-6">
-                                            <h3 class="font-display text-lg md:text-xl text-white mb-2">DEFENSE REQUIRED</h3>
-                                            <ul class="font-mono text-xs md:text-sm text-gray-300 space-y-1">
-                                                ${round.defense.map(d => `<li class="flex gap-2"><span class="text-capital-red" aria-hidden="true">></span> ${d}</li>`).join('')}
-                                            </ul>
-                                        </div>
-                                    ` : ''}
-
-                                    ${round.special ? `
-                                        <div class="bg-capital-red/5 border border-capital-red/20 p-4 md:p-6">
-                                            <h3 class="font-display text-lg md:text-xl text-white mb-1">${round.special.split(':')[0]}</h3>
-                                            <p class="font-mono text-xs text-gray-300 mb-2">${round.special.split(':').slice(1).join(':')}</p>
-                                            ${round.quote ? `<p class="text-xs text-capital-red italic font-mono border-t border-capital-red/20 pt-2">${round.quote}</p>` : ''}
-                                        </div>
-                                    ` : ''}
-
-                                    ${round.skills ? `
-                                        <div class="bg-gray-900 p-4 md:p-6 border border-gray-800">
-                                            <h3 class="font-display text-lg md:text-xl text-capital-red mb-2">SKILLS TESTED</h3>
-                                            <p class="font-mono text-xs md:text-sm text-gray-300">${round.skills}</p>
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        `;
-                    }
+                        </div>
+                    `;
 
                     const html = `
                         <div id="round${round.id}" class="relative scroll-mt-24" data-round-id="${round.id}">
