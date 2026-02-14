@@ -65,6 +65,10 @@
             overflow: hidden;
         }
 
+        @supports (height: 100svh) {
+            .hero-shell { min-height: 100svh; }
+        }
+
         .hero-atmosphere {
             position: absolute;
             inset: 0;
@@ -135,6 +139,11 @@
             font-size: clamp(4rem, 14vw, 12rem);
             letter-spacing: -0.04em;
             text-transform: uppercase;
+            line-height: 0.9;
+        }
+
+        .logo-lockup {
+            padding-top: 8px;
         }
 
         .editorial-wrap {
@@ -326,6 +335,86 @@
                 padding-bottom: 80px;
             }
         }
+
+        @media (max-width: 640px) {
+            .hero-shell {
+                padding: 64px 12px 36px;
+                min-height: auto;
+                align-items: flex-start;
+            }
+
+            .mega-title {
+                font-size: clamp(3.2rem, 18vw, 6rem);
+            }
+
+            .paradox-glow {
+                font-size: 20vw;
+                white-space: normal;
+                text-align: center;
+                max-width: 90vw;
+                line-height: 0.9;
+            }
+
+            .hero-shell .font-script {
+                transform: translate(-50%, -50%) rotate(-4deg);
+            }
+
+            .paradox-glow {
+                text-shadow: 0 0 24px rgba(220, 38, 38, 0.6), 0 0 48px rgba(220, 38, 38, 0.3);
+            }
+
+            .marquee {
+                font-size: 12px;
+                letter-spacing: 0.2em;
+            }
+
+            .section-shell {
+                padding: 72px 16px;
+            }
+
+            .ticker-strip {
+                padding: 10px 0;
+            }
+
+            .stagger-card {
+                padding: 14px;
+            }
+
+            #rounds {
+                grid-template-columns: 1fr;
+            }
+
+            #rounds a {
+                text-align: center;
+            }
+
+            .hero-text {
+                margin-top: 16px;
+            }
+
+            .logo-lockup {
+                padding-top: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-shell {
+                padding: 58px 10px 28px;
+            }
+
+            .mega-title {
+                font-size: clamp(2.6rem, 15vw, 4.6rem);
+            }
+
+            .hero-shell .font-script {
+                font-size: 16.5vw;
+                top: 52%;
+            }
+
+            .hero-shell .marquee {
+                margin-top: 32px;
+            }
+        }
         
         @media (min-width: 769px) {
             .mobile-nav { display: none; }
@@ -348,7 +437,7 @@
     <!-- Top Navigation -->
     <nav class="fixed top-0 w-full z-50 bg-void-black/85 backdrop-blur-md border-b border-capital-red/20" role="navigation" aria-label="Main navigation">
         <div class="max-w-7xl mx-auto px-6">
-            <div class="flex justify-between items-center h-20">
+            <div class="flex justify-between items-center h-16 md:h-20">
                 <a href="index.html" class="flex items-center space-x-2 group" aria-label="CAPITAL Paradox Home">
                     <span class="font-display text-3xl tracking-wider text-white group-hover:text-capital-red transition-colors">CAPITAL</span>
                     <span class="font-script text-2xl text-capital-red -rotate-6 transform origin-bottom-left group-hover:rotate-0 transition-transform">Paradox</span>
@@ -387,20 +476,14 @@
         <div class="scanlines" aria-hidden="true"></div>
 
         <div class="relative z-10 max-w-6xl mx-auto text-center">
-            <div class="text-xs font-mono tracking-[0.6em] text-capital-red uppercase mb-6">Finance Championship</div>
-            <div class="relative">
+            <div class="relative logo-lockup">
                 <h1 class="font-display mega-title leading-none text-white select-none">Capital</h1>
                 <span class="font-script text-[14vw] md:text-[7rem] text-capital-red absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-[-6deg] pointer-events-none paradox-glow whitespace-nowrap" aria-hidden="true">
                     Paradox
                 </span>
             </div>
 
-            <div class="mt-10 max-w-2xl mx-auto">
-                <p class="text-gray-200 text-lg md:text-xl font-light leading-relaxed border border-capital-red/20 px-6 py-6 bg-void-black/60">
-                    Four rounds. Asymmetric information. Delayed consequences. 
-                    <br>
-                    <span class="text-white font-semibold">Time is not linear. Neither is value.</span>
-                </p>
+            <div class="mt-8 md:mt-10 max-w-2xl mx-auto hero-text">
                 <div class="flex flex-col md:flex-row gap-4 justify-center items-center pt-8">
                     <a href="rounds.html" class="group relative px-8 py-4 bg-capital-red text-white font-mono font-bold tracking-wider overflow-hidden transition-all hover:scale-105 w-full md:w-auto text-center">
                         <span class="relative z-10">EXPLORE ROUNDS</span>

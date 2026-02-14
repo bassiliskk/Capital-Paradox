@@ -313,11 +313,49 @@
         // STATE MANAGEMENT
         // ==========================================
         const TEAM_SESSION_KEY = "capital_team_session";
+        const TEAM_SESSION_EXP_KEY = "capital_team_session_exp";
+        const TEAM_SESSION_START_KEY = "capital_team_session_start";
+        const CLIENT_ID_KEY = "capital_client_id";
+        const ACTIVE_SESSION_PATH = "activeSessions";
+        const TEAM_LIST_CACHE_KEY = "capital_team_list_cache";
+        const TEAM_LIST_CACHE_TS_KEY = "capital_team_list_cache_ts";
+
+        let SESSION_TTL_MS = 5 * 60 * 1000;
+        let SESSION_HEARTBEAT_MS = 45 * 1000;
+        let SESSION_PERSIST_MS = 12 * 60 * 60 * 1000;
+        let SESSION_MAX_MS = 24 * 60 * 60 * 1000;
+        let TEAM_LIST_REFRESH_MS = 60 * 1000;
+        let TEAM_LIST_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+        let clientConfigLoaded = false;
         
         let auctionConfig = { totalCapital: 100000 };
         let auctionItems = [];
         let auctionStatus = "closed";
         let auctionBids = {};
+        let sessionHeartbeat = null;
+        let teamListRefreshTimer = null;
+
+        async function ensureClientConfig() {
+            if (clientConfigLoaded) return;
+            if (!database) {
+                clientConfigLoaded = true;
+                return;
+            }
+            try {
+                const snapshot = await database.ref('clientConfig').once('value');
+                const cfg = snapshot.val() || {};
+                if (typeof cfg.sessionTtlMs === 'number') SESSION_TTL_MS = cfg.sessionTtlMs;
+                if (typeof cfg.sessionHeartbeatMs === 'number') SESSION_HEARTBEAT_MS = cfg.sessionHeartbeatMs;
+                if (typeof cfg.sessionPersistMs === 'number') SESSION_PERSIST_MS = cfg.sessionPersistMs;
+                if (typeof cfg.sessionMaxMs === 'number') SESSION_MAX_MS = cfg.sessionMaxMs;
+                if (typeof cfg.teamListRefreshMs === 'number') TEAM_LIST_REFRESH_MS = cfg.teamListRefreshMs;
+                if (typeof cfg.teamListCacheTtlMs === 'number') TEAM_LIST_CACHE_TTL_MS = cfg.teamListCacheTtlMs;
+            } catch (e) {
+                // Keep defaults on failure.
+            } finally {
+                clientConfigLoaded = true;
+            }
+        }
         
         let readyFlags = { config: false, items: false, status: false };
         let listeners = {};
@@ -331,15 +369,167 @@
         // UTILITY FUNCTIONS
         // ==========================================
         function getTeamSession() {
-            return sessionStorage.getItem(TEAM_SESSION_KEY);
+            const now = Date.now();
+            const exp = Number(localStorage.getItem(TEAM_SESSION_EXP_KEY) || 0);
+            const start = Number(localStorage.getItem(TEAM_SESSION_START_KEY) || 0);
+            if (exp && now > exp) {
+                clearTeamSession();
+                return null;
+            }
+            if (start && now > (start + SESSION_MAX_MS)) {
+                clearTeamSession();
+                return null;
+            }
+            const team = localStorage.getItem(TEAM_SESSION_KEY);
+            if (team && !start) {
+                localStorage.setItem(TEAM_SESSION_START_KEY, String(now));
+            }
+            return team;
         }
 
         function setTeamSession(team) {
-            sessionStorage.setItem(TEAM_SESSION_KEY, team);
+            localStorage.setItem(TEAM_SESSION_KEY, team);
+            localStorage.setItem(TEAM_SESSION_EXP_KEY, String(Date.now() + SESSION_PERSIST_MS));
+            if (!localStorage.getItem(TEAM_SESSION_START_KEY)) {
+                localStorage.setItem(TEAM_SESSION_START_KEY, String(Date.now()));
+            }
+        }
+
+        function refreshTeamSessionExpiry() {
+            if (!localStorage.getItem(TEAM_SESSION_KEY)) return;
+            const now = Date.now();
+            const start = Number(localStorage.getItem(TEAM_SESSION_START_KEY) || now);
+            const hardCap = start + SESSION_MAX_MS;
+            const nextExp = Math.min(now + SESSION_PERSIST_MS, hardCap);
+            localStorage.setItem(TEAM_SESSION_EXP_KEY, String(nextExp));
         }
 
         function clearTeamSession() {
-            sessionStorage.removeItem(TEAM_SESSION_KEY);
+            localStorage.removeItem(TEAM_SESSION_KEY);
+            localStorage.removeItem(TEAM_SESSION_EXP_KEY);
+            localStorage.removeItem(TEAM_SESSION_START_KEY);
+        }
+
+        function getClientId() {
+            let clientId = sessionStorage.getItem(CLIENT_ID_KEY);
+            if (!clientId) {
+                clientId = `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+                sessionStorage.setItem(CLIENT_ID_KEY, clientId);
+            }
+            return clientId;
+        }
+
+        function isSessionFresh(activeSession) {
+            if (!activeSession || !activeSession.lastSeen) return false;
+            const now = Date.now();
+            const skewAllowance = 30 * 1000;
+            return (now - activeSession.lastSeen) < (SESSION_TTL_MS + skewAllowance);
+        }
+
+        async function claimTeamSession(team, silent = false) {
+            if (!database) return true;
+            const clientId = getClientId();
+            const ref = database.ref(`${ACTIVE_SESSION_PATH}/${team}`);
+            const result = await ref.transaction((current) => {
+                if (!current) return { clientId, lastSeen: firebase.database.ServerValue.TIMESTAMP };
+                if (current.clientId === clientId) {
+                    return { clientId, lastSeen: firebase.database.ServerValue.TIMESTAMP };
+                }
+                if (!isSessionFresh(current)) {
+                    return { clientId, lastSeen: firebase.database.ServerValue.TIMESTAMP };
+                }
+                return;
+            });
+
+            if (!result.committed) {
+                if (!silent) {
+                    showToast(`TEAM ${team} IS ALREADY LOGGED IN.`, 'warning');
+                }
+                return false;
+            }
+
+            ref.onDisconnect().remove();
+            startSessionHeartbeat(team);
+            return true;
+        }
+
+        async function releaseTeamSession(team) {
+            stopSessionHeartbeat();
+            if (!database || !team) return;
+            const clientId = getClientId();
+            const ref = database.ref(`${ACTIVE_SESSION_PATH}/${team}`);
+            await ref.transaction((current) => {
+                if (current && current.clientId === clientId) return null;
+                return current;
+            });
+        }
+
+        let teamListCache = null;
+        async function getTeamList(retries = 2) {
+            if (!database) return [];
+            if (Array.isArray(teamListCache)) return teamListCache;
+            try {
+                const snapshot = await database.ref('teamList').once('value');
+                const teams = snapshot.val() || [];
+                teamListCache = teams.map(t => String(t).toUpperCase());
+                localStorage.setItem(TEAM_LIST_CACHE_KEY, JSON.stringify(teamListCache));
+                localStorage.setItem(TEAM_LIST_CACHE_TS_KEY, String(Date.now()));
+                return teamListCache;
+            } catch (e) {
+                if (retries > 0) {
+                    await new Promise(r => setTimeout(r, 400));
+                    return getTeamList(retries - 1);
+                }
+                const cached = localStorage.getItem(TEAM_LIST_CACHE_KEY);
+                const cachedTs = Number(localStorage.getItem(TEAM_LIST_CACHE_TS_KEY) || 0);
+                const isFresh = cachedTs && (Date.now() - cachedTs) < TEAM_LIST_CACHE_TTL_MS;
+                if (cached && isFresh) {
+                    try {
+                        teamListCache = JSON.parse(cached) || [];
+                        return teamListCache;
+                    } catch {
+                        return [];
+                    }
+                }
+                return [];
+            }
+        }
+
+        async function validateTeamCode(teamCode) {
+            const teams = await getTeamList();
+            if (teams.length === 0) {
+                showToast('TEAM LIST UNAVAILABLE. CHECK CONNECTION OR CONTACT ADMIN.', 'warning');
+                return false;
+            }
+            return teams.includes(teamCode);
+        }
+
+        function startTeamListRefresh() {
+            if (teamListRefreshTimer || !database) return;
+            teamListRefreshTimer = setInterval(() => {
+                teamListCache = null;
+                getTeamList().catch(() => {});
+            }, TEAM_LIST_REFRESH_MS);
+        }
+
+        function startSessionHeartbeat(team) {
+            stopSessionHeartbeat();
+            if (!database || !team) return;
+            const clientId = getClientId();
+            sessionHeartbeat = setInterval(() => {
+                database.ref(`${ACTIVE_SESSION_PATH}/${team}`).update({
+                    clientId,
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                });
+                refreshTeamSessionExpiry();
+            }, SESSION_HEARTBEAT_MS);
+        }
+
+        function stopSessionHeartbeat() {
+            if (sessionHeartbeat) {
+                clearInterval(sessionHeartbeat);
+                sessionHeartbeat = null;
+            }
         }
 
         function formatInr(amount) {
@@ -1051,10 +1241,19 @@
                 return;
             }
 
-            setTeamSession(teamCode);
-            startListeners(teamCode);
-            renderAuction();
-            showToast('✓ Logged in as TEAM ' + teamCode, 'success');
+            ensureClientConfig().then(() => validateTeamCode(teamCode)).then((valid) => {
+                if (!valid) {
+                    showToast('⚠️ INVALID TEAM CODE', 'warning');
+                    return;
+                }
+                claimTeamSession(teamCode).then((ok) => {
+                    if (!ok) return;
+                    setTeamSession(teamCode);
+                    startListeners(teamCode);
+                    renderAuction();
+                    showToast('✓ Logged in as TEAM ' + teamCode, 'success');
+                });
+            });
         }
 
         function logoutTeam() {
@@ -1071,8 +1270,10 @@
                 });
 
                 stopListeners();
-                clearTeamSession();
-                location.reload();
+                releaseTeamSession(getTeamSession()).then(() => {
+                    clearTeamSession();
+                    location.reload();
+                });
             }
         }
 
@@ -1080,11 +1281,30 @@
         // INITIALIZATION
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
+            ensureClientConfig().then(() => {
+                startTeamListRefresh();
+            });
             const team = getTeamSession();
             
             if (team) {
-                startListeners(team);
-                renderAuction();
+                ensureClientConfig().then(() => validateTeamCode(team)).then((valid) => {
+                    if (!valid) {
+                        clearTeamSession();
+                        document.getElementById("team-login-screen").style.display = "flex";
+                        document.getElementById("auction-loading").style.display = "none";
+                        return;
+                    }
+                    claimTeamSession(team, true).then((ok) => {
+                        if (!ok) {
+                            clearTeamSession();
+                            document.getElementById("team-login-screen").style.display = "flex";
+                            document.getElementById("auction-loading").style.display = "none";
+                            return;
+                        }
+                        startListeners(team);
+                        renderAuction();
+                    });
+                });
             } else {
                 document.getElementById("team-login-screen").style.display = "flex";
                 document.getElementById("auction-loading").style.display = "none";
@@ -1119,12 +1339,7 @@
             stopListeners();
         });
 
-        // Reload on nav back
-        window.addEventListener('pageshow', (event) => {
-            if (event.persisted) {
-                location.reload();
-            }
-        });
+        // Keep back/forward cache behavior to preserve state.
     </script>
 </body>
 </html>

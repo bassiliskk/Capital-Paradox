@@ -443,24 +443,166 @@ body { background-color: #050505; color: #FAFAFA; }
         // SESSION MANAGEMENT - Using localStorage for persistence
         // ==========================================
         const TEAM_SESSION_KEY = "capital_team_session";
+        const TEAM_SESSION_EXP_KEY = "capital_team_session_exp";
+        const TEAM_SESSION_START_KEY = "capital_team_session_start";
         const ADMIN_SESSION_KEY = "capital_admin_session";
         const DECRYPTED_SESSION_KEY = "capital_decrypted";
+        const CLIENT_ID_KEY = "capital_client_id";
+        const ACTIVE_SESSION_PATH = "activeSessions";
+        const TEAM_LIST_CACHE_KEY = "capital_team_list_cache";
+        const TEAM_LIST_CACHE_TS_KEY = "capital_team_list_cache_ts";
+
+        let SESSION_TTL_MS = 5 * 60 * 1000;
+        let SESSION_HEARTBEAT_MS = 45 * 1000;
+        let SESSION_PERSIST_MS = 12 * 60 * 60 * 1000;
+        let SESSION_MAX_MS = 24 * 60 * 60 * 1000;
+        let TEAM_LIST_REFRESH_MS = 60 * 1000;
+        let TEAM_LIST_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+        let clientConfigLoaded = false;
 
         // Store current round ID for passed screen
         let currentPassedRoundId = null;
         let firebaseReady = false;
+        let sessionHeartbeat = null;
+        let teamListRefreshTimer = null;
+
+        async function ensureClientConfig() {
+            if (clientConfigLoaded) return;
+            if (!database) {
+                clientConfigLoaded = true;
+                return;
+            }
+            try {
+                const snapshot = await database.ref('clientConfig').once('value');
+                const cfg = snapshot.val() || {};
+                if (typeof cfg.sessionTtlMs === 'number') SESSION_TTL_MS = cfg.sessionTtlMs;
+                if (typeof cfg.sessionHeartbeatMs === 'number') SESSION_HEARTBEAT_MS = cfg.sessionHeartbeatMs;
+                if (typeof cfg.sessionPersistMs === 'number') SESSION_PERSIST_MS = cfg.sessionPersistMs;
+                if (typeof cfg.sessionMaxMs === 'number') SESSION_MAX_MS = cfg.sessionMaxMs;
+                if (typeof cfg.teamListRefreshMs === 'number') TEAM_LIST_REFRESH_MS = cfg.teamListRefreshMs;
+                if (typeof cfg.teamListCacheTtlMs === 'number') TEAM_LIST_CACHE_TTL_MS = cfg.teamListCacheTtlMs;
+            } catch (e) {
+                // Keep defaults on failure.
+            } finally {
+                clientConfigLoaded = true;
+            }
+        }
 
         // Get team from localStorage (persists across page reloads)
         function getTeamSession() {
-            return sessionStorage.getItem(TEAM_SESSION_KEY);
+            const now = Date.now();
+            const exp = Number(localStorage.getItem(TEAM_SESSION_EXP_KEY) || 0);
+            const start = Number(localStorage.getItem(TEAM_SESSION_START_KEY) || 0);
+            if (exp && now > exp) {
+                clearTeamSession();
+                return null;
+            }
+            if (start && now > (start + SESSION_MAX_MS)) {
+                clearTeamSession();
+                return null;
+            }
+            const team = localStorage.getItem(TEAM_SESSION_KEY);
+            if (team && !start) {
+                localStorage.setItem(TEAM_SESSION_START_KEY, String(now));
+            }
+            return team;
         }
 
         function setTeamSession(team) {
-            sessionStorage.setItem(TEAM_SESSION_KEY, team);
+            localStorage.setItem(TEAM_SESSION_KEY, team);
+            localStorage.setItem(TEAM_SESSION_EXP_KEY, String(Date.now() + SESSION_PERSIST_MS));
+            if (!localStorage.getItem(TEAM_SESSION_START_KEY)) {
+                localStorage.setItem(TEAM_SESSION_START_KEY, String(Date.now()));
+            }
+        }
+
+        function refreshTeamSessionExpiry() {
+            if (!localStorage.getItem(TEAM_SESSION_KEY)) return;
+            const now = Date.now();
+            const start = Number(localStorage.getItem(TEAM_SESSION_START_KEY) || now);
+            const hardCap = start + SESSION_MAX_MS;
+            const nextExp = Math.min(now + SESSION_PERSIST_MS, hardCap);
+            localStorage.setItem(TEAM_SESSION_EXP_KEY, String(nextExp));
         }
 
         function clearTeamSession() {
-            sessionStorage.removeItem(TEAM_SESSION_KEY);
+            localStorage.removeItem(TEAM_SESSION_KEY);
+            localStorage.removeItem(TEAM_SESSION_EXP_KEY);
+            localStorage.removeItem(TEAM_SESSION_START_KEY);
+        }
+
+        function getClientId() {
+            let clientId = sessionStorage.getItem(CLIENT_ID_KEY);
+            if (!clientId) {
+                clientId = `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+                sessionStorage.setItem(CLIENT_ID_KEY, clientId);
+            }
+            return clientId;
+        }
+
+        function isSessionFresh(activeSession) {
+            if (!activeSession || !activeSession.lastSeen) return false;
+            const now = Date.now();
+            const skewAllowance = 30 * 1000;
+            return (now - activeSession.lastSeen) < (SESSION_TTL_MS + skewAllowance);
+        }
+
+        async function claimTeamSession(team, silent = false) {
+            if (!database) return true;
+            const clientId = getClientId();
+            const ref = database.ref(`${ACTIVE_SESSION_PATH}/${team}`);
+            const result = await ref.transaction((current) => {
+                if (!current) return { clientId, lastSeen: firebase.database.ServerValue.TIMESTAMP };
+                if (current.clientId === clientId) {
+                    return { clientId, lastSeen: firebase.database.ServerValue.TIMESTAMP };
+                }
+                if (!isSessionFresh(current)) {
+                    return { clientId, lastSeen: firebase.database.ServerValue.TIMESTAMP };
+                }
+                return;
+            });
+
+            if (!result.committed) {
+                if (!silent) {
+                    showModal(`TEAM ${team} IS ALREADY LOGGED IN.`);
+                }
+                return false;
+            }
+
+            ref.onDisconnect().remove();
+            startSessionHeartbeat(team);
+            return true;
+        }
+
+        async function releaseTeamSession(team) {
+            stopSessionHeartbeat();
+            if (!database || !team) return;
+            const clientId = getClientId();
+            const ref = database.ref(`${ACTIVE_SESSION_PATH}/${team}`);
+            await ref.transaction((current) => {
+                if (current && current.clientId === clientId) return null;
+                return current;
+            });
+        }
+
+        function startSessionHeartbeat(team) {
+            stopSessionHeartbeat();
+            if (!database || !team) return;
+            const clientId = getClientId();
+            sessionHeartbeat = setInterval(() => {
+                database.ref(`${ACTIVE_SESSION_PATH}/${team}`).update({
+                    clientId,
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                });
+                refreshTeamSessionExpiry();
+            }, SESSION_HEARTBEAT_MS);
+        }
+
+        function stopSessionHeartbeat() {
+            if (sessionHeartbeat) {
+                clearInterval(sessionHeartbeat);
+                sessionHeartbeat = null;
+            }
         }
 
         // Get decrypted rounds from localStorage
@@ -505,8 +647,9 @@ body { background-color: #050505; color: #FAFAFA; }
             }
         }
 
-        function logoutTeam() {
+        async function logoutTeam() {
             const team = getTeamSession();
+            await releaseTeamSession(team);
             clearTeamDecrypted(team);
             clearTeamSession();
             updateLogoutUI(null);
@@ -549,7 +692,15 @@ body { background-color: #050505; color: #FAFAFA; }
             }
 
             // This is a team login
+            await ensureClientConfig();
             const teamCode = raw.toUpperCase();
+            const validTeam = await validateTeamCode(teamCode);
+            if (!validTeam) {
+                showModal("INVALID TEAM CODE.");
+                return;
+            }
+            const ok = await claimTeamSession(teamCode);
+            if (!ok) return;
             setTeamSession(teamCode);
             render();
         }
@@ -793,7 +944,7 @@ body { background-color: #050505; color: #FAFAFA; }
         }
 
 
-        function render(){
+        async function render(){
             const team = getTeamSession();
             updateLogoutUI(team);
 
@@ -805,6 +956,27 @@ body { background-color: #050505; color: #FAFAFA; }
                 const roundsLoading = document.getElementById("rounds-loading");
                 if (roundsLoading) roundsLoading.style.display = "none";
                 return;
+            }
+
+            if (database) {
+                const clientId = getClientId();
+                const sessionRef = database.ref(`${ACTIVE_SESSION_PATH}/${team}`);
+                const snapshot = await sessionRef.once('value');
+                const active = snapshot.val();
+                if (!active) {
+                    const reclaimed = await claimTeamSession(team, true);
+                    if (!reclaimed) {
+                        clearTeamSession();
+                        updateLogoutUI(null);
+                        showModal(`TEAM ${team} SESSION ENDED. PLEASE LOG IN AGAIN.`);
+                        return;
+                    }
+                } else if (active.clientId !== clientId && isSessionFresh(active)) {
+                    clearTeamSession();
+                    updateLogoutUI(null);
+                    showModal(`TEAM ${team} SESSION ENDED. PLEASE LOG IN AGAIN.`);
+                    return;
+                }
             }
 
             document.getElementById("team-login-screen").style.display = "none";
@@ -821,6 +993,8 @@ body { background-color: #050505; color: #FAFAFA; }
                 document.getElementById("rounds-section").style.display = "none";
                 return;
             }
+            await ensureClientConfig();
+            startTeamListRefresh();
 
             // Fetch data from Firebase with error handling
             const roundsLoading = document.getElementById("rounds-loading");
@@ -1122,6 +1296,55 @@ body { background-color: #050505; color: #FAFAFA; }
                 }
             }, 2000);
         });
+
+        // Do not remove active session on unload; rely on TTL heartbeat.
     </script>
 </body>
 </html>
+        let teamListCache = null;
+        async function getTeamList(retries = 2) {
+            if (!database) return [];
+            if (Array.isArray(teamListCache)) return teamListCache;
+            try {
+                const snapshot = await database.ref('teamList').once('value');
+                const teams = snapshot.val() || [];
+                teamListCache = teams.map(t => String(t).toUpperCase());
+                localStorage.setItem(TEAM_LIST_CACHE_KEY, JSON.stringify(teamListCache));
+                localStorage.setItem(TEAM_LIST_CACHE_TS_KEY, String(Date.now()));
+                return teamListCache;
+            } catch (e) {
+                if (retries > 0) {
+                    await new Promise(r => setTimeout(r, 400));
+                    return getTeamList(retries - 1);
+                }
+                const cached = localStorage.getItem(TEAM_LIST_CACHE_KEY);
+                const cachedTs = Number(localStorage.getItem(TEAM_LIST_CACHE_TS_KEY) || 0);
+                const isFresh = cachedTs && (Date.now() - cachedTs) < TEAM_LIST_CACHE_TTL_MS;
+                if (cached && isFresh) {
+                    try {
+                        teamListCache = JSON.parse(cached) || [];
+                        return teamListCache;
+                    } catch {
+                        return [];
+                    }
+                }
+                return [];
+            }
+        }
+
+        async function validateTeamCode(teamCode) {
+            const teams = await getTeamList();
+            if (teams.length === 0) {
+                showModal("TEAM LIST UNAVAILABLE. CHECK CONNECTION OR CONTACT ADMIN.");
+                return false;
+            }
+            return teams.includes(teamCode);
+        }
+
+        function startTeamListRefresh() {
+            if (teamListRefreshTimer || !database) return;
+            teamListRefreshTimer = setInterval(() => {
+                teamListCache = null;
+                getTeamList().catch(() => {});
+            }, TEAM_LIST_REFRESH_MS);
+        }
