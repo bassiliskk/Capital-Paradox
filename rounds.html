@@ -449,6 +449,7 @@ body { background-color: #050505; color: #FAFAFA; }
         // Store current round ID for passed screen
         let currentPassedRoundId = null;
         let firebaseReady = false;
+        let sessionValidationTimer = null;
 
         // Get team from localStorage (persists across page reloads)
         function getTeamSession() {
@@ -507,8 +508,24 @@ body { background-color: #050505; color: #FAFAFA; }
 
         function logoutTeam() {
             const team = getTeamSession();
+            const sessionId = sessionStorage.getItem('team_session_id');
+            
+            // Clear local storage
             clearTeamDecrypted(team);
             clearTeamSession();
+            sessionStorage.removeItem('team_session_id');
+            
+            // Remove active session from Firebase
+            if (team) {
+                removeActiveSession(team);
+            }
+            
+            // Stop validation timer
+            if (sessionValidationTimer) {
+                clearInterval(sessionValidationTimer);
+                sessionValidationTimer = null;
+            }
+            
             updateLogoutUI(null);
             render();
         }
@@ -550,7 +567,56 @@ body { background-color: #050505; color: #FAFAFA; }
 
             // This is a team login
             const teamCode = raw.toUpperCase();
+            
+            // Check if team code is valid
+            const isValid = await isValidTeamCode(teamCode);
+            if (!isValid) {
+                showModal("Invalid team code. Please check and try again.");
+                return;
+            }
+            
+            // Check if team already has an active session
+            const existingSession = await checkActiveSession(teamCode);
+            if (existingSession) {
+                showModal("This team is already logged in on another device. Please log out from the other device first or wait 2 minutes for the session to expire.");
+                return;
+            }
+            
+            // Create new session
+            const newSessionId = generateSessionId();
+            const sessionCreated = await createActiveSession(teamCode, newSessionId);
+            
+            if (!sessionCreated) {
+                showModal("Failed to create session. Please try again.");
+                return;
+            }
+            
+            // Store session info locally
             setTeamSession(teamCode);
+            sessionStorage.setItem('team_session_id', newSessionId);
+            
+            // Start heartbeat to keep session alive
+            startHeartbeat(teamCode, newSessionId);
+            
+            // Set up periodic session validation
+            sessionValidationTimer = setInterval(async () => {
+                const currentTeam = getTeamSession();
+                const currentSessionId = sessionStorage.getItem('team_session_id');
+                
+                if (currentTeam && currentSessionId) {
+                    const isValid = await validateCurrentSession(currentTeam, currentSessionId);
+                    if (!isValid) {
+                        // Session was taken over by another device
+                        clearInterval(sessionValidationTimer);
+                        stopHeartbeat();
+                        clearTeamSession();
+                        sessionStorage.removeItem('team_session_id');
+                        showModal("Your session has expired or was taken over by another device. Please log in again.");
+                        render();
+                    }
+                }
+            }, 60000); // Check every minute
+            
             render();
         }
 
@@ -1121,6 +1187,13 @@ body { background-color: #050505; color: #FAFAFA; }
                     document.getElementById("firebase-error").style.display = "flex";
                 }
             }, 2000);
+        });
+        
+        // Clean up session on page unload (but keep it in storage for refresh)
+        window.addEventListener("beforeunload", () => {
+            // Note: We DON'T remove the session here because we want
+            // the user to be able to refresh the page
+            // Session will timeout after 2 minutes of inactivity automatically
         });
     </script>
 </body>
