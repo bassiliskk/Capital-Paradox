@@ -483,28 +483,47 @@ body{
   </div>
 
   <!-- Team Details Modal -->
-  <div id="team-details-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;padding:20px;overflow:auto;">
-    <div style="max-width:1000px;margin:40px auto;background:#050505;border:2px solid #DC2626;border-radius:12px;padding:32px;">
-      <div style="display:flex;justify-between;align-items:center;margin-bottom:24px;">
-        <h2 id="team-details-title" style="color:#DC2626;font-size:24px;"></h2>
-        <button onclick="closeTeamDetails()" style="background:#DC2626;color:white;border:none;padding:8px 16px;cursor:pointer;border-radius:4px;">✕ CLOSE</button>
-      </div>
-      <div id="team-details-content"></div>
-    </div>
-  </div>
+<div id="team-details-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;padding:20px;overflow:auto;">
 
-  <!-- Suspicious Activity Modal -->
-  <div id="suspicious-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;padding:20px;overflow:auto;">
-    <div style="max-width:1000px;margin:40px auto;background:#050505;border:2px solid #ef4444;border-radius:12px;padding:32px;">
-      <div style="display:flex;justify-between;align-items:center;margin-bottom:24px;">
-        <h2 style="color:#ef4444;font-size:24px;">🚨 SUSPICIOUS ACTIVITY REPORT</h2>
-        <button onclick="closeSuspiciousModal()" style="background:#ef4444;color:white;border:none;padding:8px 16px;cursor:pointer;border-radius:4px;">✕ CLOSE</button>
-      </div>
-      <div id="suspicious-content"></div>
+  <div style="max-width:1000px;margin:40px auto;background:#050505;border:2px solid #DC2626;border-radius:12px;padding:32px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h2 id="team-details-title" style="color:#DC2626;font-size:24px;"></h2>
+
+      <button onclick="closeTeamDetails()"
+              style="background:#DC2626;color:white;border:none;padding:8px 16px;cursor:pointer;border-radius:4px;">
+        ✕ CLOSE
+      </button>
     </div>
+
+    <div id="team-details-content"></div>
+
   </div>
 </div>
+
+<!-- Suspicious Activity Modal -->
+<div id="suspicious-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;padding:20px;overflow:auto;">
+
+  <div style="max-width:1000px;margin:40px auto;background:#050505;border:2px solid #ef4444;border-radius:12px;padding:32px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h2 style="color:#ef4444;font-size:24px;">
+        🚨 SUSPICIOUS ACTIVITY REPORT
+      </h2>
+
+      <button onclick="closeSuspiciousModal()"
+              style="background:#ef4444;color:white;border:none;padding:8px 16px;cursor:pointer;border-radius:4px;">
+        ✕ CLOSE
+      </button>
+    </div>
+
+    <div id="suspicious-content"></div>
+
+  </div>
 </div>
+
 
 <!-- Load Firebase Config -->
 <script src="firebase-config.js"></script>

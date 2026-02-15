@@ -12,13 +12,14 @@
 // ==========================================
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyA-jEcqHqL0NyYaRu1WwyBRmuxskj8IS-8",
   authDomain: "capital-paradox.firebaseapp.com",
   databaseURL: "https://capital-paradox-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "capital-paradox",
-  storageBucket: "capital-paradox.appspot.com",
-  messagingSenderId: "YOUR_NUMBER",
-  appId: "YOUR_APP_ID"
+  storageBucket: "capital-paradox.firebasestorage.app",
+  messagingSenderId: "1088881259421",
+  appId: "1:1088881259421:web:75187fa72bbfcd7dc1f574",
+  measurementId: "G-MNM9JZ1W14"
 };
 
 // Initialize Firebase
@@ -30,6 +31,51 @@ try {
     console.error("Firebase initialization failed:", error);
     database = null;
 }
+
+// ==========================================
+// EVENT DETAILS CONFIGURATION
+// ==========================================
+
+const EVENT_DETAILS = {
+    // Event Date & Time
+    date: "March 15, 2026",  // Change this to your actual event date
+    time: "9:00 AM - 5:00 PM",  // Change this to your actual event time
+    
+    // Venue Information
+    venue: {
+        name: "Your College Name - Main Auditorium",  // Change this
+        address: "Building Name, Street Address, City, State, PIN",  // Change this
+        landmark: "Near Main Gate"  // Optional landmark
+    },
+    
+    // Registration Details
+    registration: {
+        deadline: "March 10, 2026",  // Change this
+        fee: "₹500 per team",  // Change this or set to "Free Entry"
+        maxTeams: 50  // Maximum number of teams
+    },
+    
+    // Prize Information
+    prizes: {
+        first: "₹10,000",  // Change this
+        second: "₹5,000",  // Change this
+        third: "₹2,500"  // Change this
+    },
+    
+    // Contact Information
+    contact: {
+        email: "capitalparadox@yourcollege.edu",  // Change this
+        phone: "+91 XXXXX XXXXX",  // Change this
+        whatsapp: "https://chat.whatsapp.com/YOUR_GROUP_INVITE_LINK"  // Add your WhatsApp group link here
+    },
+    
+    // Social Media (Optional)
+    social: {
+        instagram: "https://instagram.com/your_event_handle",  // Optional
+        twitter: "https://twitter.com/your_event_handle",  // Optional
+        linkedin: "https://linkedin.com/company/your_event"  // Optional
+    }
+};
 
 // ==========================================
 // SESSION MANAGEMENT UTILITIES
@@ -152,6 +198,18 @@ async function isValidTeamCode(teamCode) {
     if (!database) return true; // Fallback to allow login if Firebase is down
     
     try {
+        // Prefer teamList as the single source of truth
+        const teamListSnapshot = await database.ref('teamList').once('value');
+        const teamList = teamListSnapshot.val();
+
+        if (teamList) {
+            if (Array.isArray(teamList)) {
+                return teamList.includes(teamCode);
+            }
+            return teamList[teamCode] === true;
+        }
+
+        // Fallback to legacy validTeams if teamList is missing
         const snapshot = await database.ref('validTeams').once('value');
         const validTeams = snapshot.val();
         
@@ -174,7 +232,9 @@ async function isValidTeamCode(teamCode) {
 // ==========================================
 
 // Admin password validation (SHA-256 hash)
-const ADMIN_HASH = "ce3da03d8a1d8310d563ba5f6284f278a4b38d546911d94b0b72c53b3fcf9be3";
+// Default password: "admin123" (CHANGE THIS!)
+// Current hash is for: "admin123"
+const ADMIN_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9";
 
 // Optional server verification endpoint
 const ADMIN_VERIFY_URL = "";
@@ -218,7 +278,42 @@ async function validateAdminAccess(enteredPassword) {
 // 3. Copy the SHA-256 hash
 // 4. Replace the ADMIN_HASH value above with your hash
 // 5. Remember your password - you'll need it to access admin.html
+//
+// SECURITY NOTE: The default password is "admin123"
+// PLEASE CHANGE THIS IMMEDIATELY for production use!
 // ==========================================
+
+// ==========================================
+// HELPER FUNCTIONS FOR EVENT DETAILS
+// ==========================================
+
+// Get WhatsApp group link
+function getWhatsAppLink() {
+    return EVENT_DETAILS.contact.whatsapp;
+}
+
+// Get formatted event date and time
+function getEventDateTime() {
+    return {
+        date: EVENT_DETAILS.date,
+        time: EVENT_DETAILS.time
+    };
+}
+
+// Get venue information
+function getVenueInfo() {
+    return EVENT_DETAILS.venue;
+}
+
+// Get contact information
+function getContactInfo() {
+    return EVENT_DETAILS.contact;
+}
+
+// Get prize information
+function getPrizeInfo() {
+    return EVENT_DETAILS.prizes;
+}
 
 // ==========================================
 // FIREBASE DATA STRUCTURE FOR SESSION LOCKING:
@@ -238,9 +333,33 @@ async function validateAdminAccess(enteredPassword) {
 //     "BETA": true,
 //     "GAMMA": true,
 //     "DELTA": true
+//   },
+//   "teamStates": {
+//     "round1": {
+//       "ALPHA": "passed",
+//       "BETA": "access"
+//     },
+//     "round2": {
+//       "ALPHA": "passed",
+//       "BETA": "revoked"
+//     },
+//     "round3": {
+//       "ALPHA": "access",
+//       "BETA": "revoked"
+//     },
+//     "round4": {
+//       "ALPHA": "revoked",
+//       "BETA": "revoked"
+//     }
 //   }
 // }
 //
 // Or use array format for validTeams:
 // "validTeams": ["ALPHA", "BETA", "GAMMA", "DELTA"]
+//
+// Team States can be:
+// - "revoked": Team cannot access the round
+// - "access": Team can access and view the round
+// - "passed": Team has completed the round
+// - "eliminated": Team has been eliminated from the competition
 // ==========================================
