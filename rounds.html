@@ -352,8 +352,10 @@ body { background-color: #050505; color: #FAFAFA; }
                 class="code-input w-full p-4 rounded mb-4 font-mono" 
                 placeholder="ENTER TEAM CODE"
                 aria-label="Team login code"
-                autocomplete="off">
+                autocomplete="off"
+                onkeypress="if(event.key === 'Enter') login()">
             <button onclick="login()" class="unlock-btn w-full py-3 mb-6 font-mono tracking-wider">ACCESS</button>
+            <div id="login-status" class="text-xs font-mono mt-2" role="status"></div>
             <div class="flex flex-wrap justify-center gap-6 text-sm font-mono">
                 <a href="index.html" class="text-gray-400 hover:text-white transition-colors">HOME</a>
                 <span class="text-capital-red">ROUNDS</span>
@@ -546,78 +548,144 @@ body { background-color: #050505; color: #FAFAFA; }
         }
 
         async function login(){
+            const loginStatus = document.getElementById("login-status");
             const raw = document.getElementById("team-login-input").value.trim();
 
+            console.log("Login attempt started");
+            console.log("Input value:", raw);
+            
+            if (loginStatus) loginStatus.innerHTML = '<span class="text-yellow-500">Processing...</span>';
+
             if(!raw) {
+                console.log("Empty input");
+                if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Please enter a team code</span>';
                 showModal("Please enter a team code.");
                 return;
             }
 
+            // Check if Firebase is initialized
+            if (!database) {
+                console.error("Firebase database not initialized");
+                if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Database connection failed</span>';
+                showModal("Database connection failed. Please refresh the page.");
+                return;
+            }
+
+            console.log("Checking if admin login...");
             // Check if this is admin login
             try {
                 const isAdmin = await validateAdminAccess(raw);
+                console.log("Admin check result:", isAdmin);
                 if(isAdmin){
                     sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
                     window.location.replace("admin.html");
                     return;
                 }
             } catch(e) {
+                console.log("Not admin, continuing as team. Error:", e);
                 // Not admin, continue as team
             }
 
             // This is a team login
             const teamCode = raw.toUpperCase();
+            console.log("Team code (uppercase):", teamCode);
+            
+            if (loginStatus) loginStatus.innerHTML = '<span class="text-yellow-500">Validating team code...</span>';
             
             // Check if team code is valid
-            const isValid = await isValidTeamCode(teamCode);
-            if (!isValid) {
-                showModal("Invalid team code. Please check and try again.");
+            try {
+                console.log("Checking if team code is valid...");
+                const isValid = await isValidTeamCode(teamCode);
+                console.log("Team code valid:", isValid);
+                
+                if (!isValid) {
+                    console.log("Invalid team code");
+                    if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Invalid team code</span>';
+                    showModal("Invalid team code. Please check and try again.");
+                    return;
+                }
+            } catch (error) {
+                console.error("Error validating team code:", error);
+                if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Validation error</span>';
+                showModal("Error validating team code: " + error.message);
                 return;
             }
+            
+            if (loginStatus) loginStatus.innerHTML = '<span class="text-yellow-500">Checking for existing session...</span>';
             
             // Check if team already has an active session
-            const existingSession = await checkActiveSession(teamCode);
-            if (existingSession) {
-                showModal("This team is already logged in on another device. Please log out from the other device first or wait 2 minutes for the session to expire.");
+            try {
+                console.log("Checking for existing session...");
+                const existingSession = await checkActiveSession(teamCode);
+                console.log("Existing session:", existingSession);
+                
+                if (existingSession) {
+                    console.log("Team already has active session");
+                    if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Already logged in elsewhere</span>';
+                    showModal("This team is already logged in on another device. Please log out from the other device first or wait 2 minutes for the session to expire.");
+                    return;
+                }
+            } catch (error) {
+                console.error("Error checking existing session:", error);
+                if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Session check error</span>';
+                showModal("Error checking session: " + error.message);
                 return;
             }
+            
+            if (loginStatus) loginStatus.innerHTML = '<span class="text-yellow-500">Creating session...</span>';
             
             // Create new session
-            const newSessionId = generateSessionId();
-            const sessionCreated = await createActiveSession(teamCode, newSessionId);
-            
-            if (!sessionCreated) {
-                showModal("Failed to create session. Please try again.");
-                return;
-            }
-            
-            // Store session info locally
-            setTeamSession(teamCode);
-            sessionStorage.setItem('team_session_id', newSessionId);
-            
-            // Start heartbeat to keep session alive
-            startHeartbeat(teamCode, newSessionId);
-            
-            // Set up periodic session validation
-            sessionValidationTimer = setInterval(async () => {
-                const currentTeam = getTeamSession();
-                const currentSessionId = sessionStorage.getItem('team_session_id');
+            try {
+                console.log("Creating new session...");
+                const newSessionId = generateSessionId();
+                console.log("Generated session ID:", newSessionId);
                 
-                if (currentTeam && currentSessionId) {
-                    const isValid = await validateCurrentSession(currentTeam, currentSessionId);
-                    if (!isValid) {
-                        // Session was taken over by another device
-                        clearInterval(sessionValidationTimer);
-                        stopHeartbeat();
-                        clearTeamSession();
-                        sessionStorage.removeItem('team_session_id');
-                        showModal("Your session has expired or was taken over by another device. Please log in again.");
-                        render();
-                    }
+                const sessionCreated = await createActiveSession(teamCode, newSessionId);
+                console.log("Session created:", sessionCreated);
+                
+                if (!sessionCreated) {
+                    console.log("Failed to create session");
+                    if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Session creation failed</span>';
+                    showModal("Failed to create session. Please try again.");
+                    return;
                 }
-            }, 60000); // Check every minute
-            
-            render();
+                
+                // Store session info locally
+                setTeamSession(teamCode);
+                sessionStorage.setItem('team_session_id', newSessionId);
+                console.log("Session stored locally");
+                
+                // Start heartbeat to keep session alive
+                startHeartbeat(teamCode, newSessionId);
+                console.log("Heartbeat started");
+                
+                // Set up periodic session validation
+                sessionValidationTimer = setInterval(async () => {
+                    const currentTeam = getTeamSession();
+                    const currentSessionId = sessionStorage.getItem('team_session_id');
+                    
+                    if (currentTeam && currentSessionId) {
+                        const isValid = await validateCurrentSession(currentTeam, currentSessionId);
+                        if (!isValid) {
+                            // Session was taken over by another device
+                            clearInterval(sessionValidationTimer);
+                            stopHeartbeat();
+                            clearTeamSession();
+                            sessionStorage.removeItem('team_session_id');
+                            showModal("Your session has expired or was taken over by another device. Please log in again.");
+                            render();
+                        }
+                    }
+                }, 60000); // Check every minute
+                
+                if (loginStatus) loginStatus.innerHTML = '<span class="text-green-500">Login successful!</span>';
+                console.log("Login successful, rendering...");
+                render();
+            } catch (error) {
+                console.error("Error during login:", error);
+                if (loginStatus) loginStatus.innerHTML = '<span class="text-red-500">Login error: ' + error.message + '</span>';
+                showModal("Login error: " + error.message);
+            }
         }
 
         // Mobile menu toggle
@@ -745,7 +813,7 @@ body { background-color: #050505; color: #FAFAFA; }
             },
             {
                 id: 3,
-                title: "THE BARTER TRADE",
+                title: "DIVIDE AND CONQUER",
                 subtitle: "Value is fluid. Liquidity is illusion.",
                 concept: "RESOURCE ARBITRAGE",
                 icon: "refresh-cw",
@@ -782,6 +850,12 @@ body { background-color: #050505; color: #FAFAFA; }
                         "Balance liquidity, utility, and exposure in every exchange.",
                         "Hold for control or trade for resilience."
                     ]
+                },
+                cta: {
+                    title: "GO TO DIVIDE AND CONQUER",
+                    label: "DIVIDE AND CONQUER",
+                    href: "divideconquer.html",
+                    note: "Access opens when the admin unlocks Round 3."
                 },
                 finalWarning: {
                     lines: [
@@ -903,7 +977,8 @@ body { background-color: #050505; color: #FAFAFA; }
                 container.innerHTML = "";
 
                 roundsData.forEach(round => {
-                    const status = (state[round.id] && state[round.id][team]) ? state[round.id][team] : "revoked";
+                    const roundKey = `round${round.id}`;
+                    const status = (state[roundKey] && state[roundKey][team]) ? state[roundKey][team] : "revoked";
                     const canDecrypt = (status === "access" || status === "passed");
                     const hasDecrypted = decrypted[`${team}_${round.id}`] === true;
 
@@ -1078,7 +1153,7 @@ body { background-color: #050505; color: #FAFAFA; }
             }
 
             // Fetch current status from Firebase
-            database.ref(`teamStates/${id}/${team}`).once('value').then((snapshot) => {
+            database.ref(`teamStates/round${id}/${team}`).once('value').then((snapshot) => {
                 const s = snapshot.val() || "revoked";
 
                 if(s === "revoked"){
@@ -1118,7 +1193,7 @@ body { background-color: #050505; color: #FAFAFA; }
             const roundNames = {
                 1: "Round 1 -- WOLVES OF WALL STREET",
                 2: "Round 2 -- DIVIDED LOYALTIES",
-                3: "Round 3 -- THE BARTER TRADE",
+                3: "Round 3 -- DIVIDE AND CONQUER",
                 4: "Round 4 -- THE INSIDER'S DILEMMA"
             };
 
@@ -1135,7 +1210,7 @@ body { background-color: #050505; color: #FAFAFA; }
             const roundNames = {
                 1: "WOLVES OF WALL STREET",
                 2: "DIVIDED LOYALTIES",
-                3: "THE BARTER TRADE",
+                3: "DIVIDE AND CONQUER",
                 4: "THE INSIDER'S DILEMMA"
             };
 

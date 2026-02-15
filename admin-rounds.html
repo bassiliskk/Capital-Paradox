@@ -323,6 +323,15 @@ Click each cell to cycle through: REVOKED -> ACCESS -> PASSED -> ELIMINATED
     <div class="team-list" id="team-list" role="list"></div>
   </div>
 
+  <!-- Card Category Locks -->
+  <div class="team-input-section">
+    <div style="margin-bottom:8px;">
+      <span style="color:#DC2626;font-size:12px;font-weight:bold;">CARD CATEGORY LOCKS:</span>
+    </div>
+    <p class="text-gray-400 text-sm mb-3">Lock categories to hide them on the Divide &amp; Conquer page.</p>
+    <div class="team-list" id="category-locks-list" role="list"></div>
+  </div>
+
   <!-- Admin Grid -->
   <div style="overflow-x:auto;">
     <table class="admin-table" id="admin-grid">
@@ -490,6 +499,18 @@ async function checkAdminAuth() {
 }
 
 const STATES = ["revoked","access","passed","eliminated"];
+const CATEGORY_LABELS = {
+  resource: "Resources",
+  development: "Development",
+  war_special: "War & Special",
+  crisis: "Crisis"
+};
+let categoryLocks = {
+  resource: false,
+  development: false,
+  war_special: false,
+  crisis: false
+};
 
 function showError(message) {
   document.getElementById("error-text").innerText = message;
@@ -544,6 +565,59 @@ function setTeamState(round, team, state){
   });
 }
 
+function normalizeCategoryLocks(data){
+  const raw = data || {};
+  return {
+    resource: raw.resource === true,
+    development: raw.development === true,
+    war_special: raw.war_special === true,
+    crisis: raw.crisis === true
+  };
+}
+
+function loadCategoryLocks(callback){
+  if (!database) return;
+  database.ref('cardCategoryLocks').once('value').then((snapshot) => {
+    categoryLocks = normalizeCategoryLocks(snapshot.val());
+    if (callback) callback(categoryLocks);
+  }).catch((error) => {
+    console.error("Error fetching category locks:", error);
+    showModal("Failed to load category locks.");
+  });
+}
+
+function setCategoryLocks(locks){
+  if (!database) return;
+  database.ref('cardCategoryLocks').set(locks).catch((error) => {
+    console.error("Error saving category locks:", error);
+    showModal("Failed to save category locks. Please try again.");
+  });
+}
+
+function toggleCategoryLock(category){
+  categoryLocks[category] = !categoryLocks[category];
+  setCategoryLocks(categoryLocks);
+  renderCategoryLocks();
+}
+
+function renderCategoryLocks(){
+  const list = document.getElementById("category-locks-list");
+  if (!list) return;
+  const html = Object.keys(CATEGORY_LABELS).map((key) => {
+    const locked = categoryLocks[key] === true;
+    return `
+      <div class="team-tag" role="listitem">
+        <span>${CATEGORY_LABELS[key]}</span>
+        <span class="${locked ? 'state revoked' : 'state access'}">${locked ? 'LOCKED' : 'UNLOCKED'}</span>
+        <button class="add-team-btn" style="padding:4px 10px;font-size:11px;" onclick="toggleCategoryLock('${key}')">
+          ${locked ? 'UNLOCK' : 'LOCK'}
+        </button>
+      </div>
+    `;
+  }).join('');
+  list.innerHTML = html;
+}
+
 async function addTeam(){
   const input = document.getElementById("new-team-input");
   const button = document.getElementById("add-team-button");
@@ -580,7 +654,7 @@ async function addTeam(){
     const promises = [];
     for(let r=1; r<=4; r++){
       promises.push(
-        database.ref(`teamStates/${r}/${teamName}`).set("revoked")
+        database.ref(`teamStates/round${r}/${teamName}`).set("revoked")
       );
     }
     
@@ -612,7 +686,7 @@ async function removeTeam(teamName){
       const promises = [];
       for(let r=1; r<=4; r++){
         promises.push(
-          database.ref(`teamStates/${r}/${teamName}`).remove()
+          database.ref(`teamStates/round${r}/${teamName}`).remove()
         );
       }
       
@@ -628,9 +702,10 @@ async function removeTeam(teamName){
 
 function cycle(round, team){
   getTeamStates((states) => {
-    const cur = states[round][team] || "revoked";
+    const roundKey = `round${round}`;
+    const cur = (states[roundKey] && states[roundKey][team]) ? states[roundKey][team] : "revoked";
     const next = STATES[(STATES.indexOf(cur)+1)%4];
-    setTeamState(round, team, next);
+    setTeamState(roundKey, team, next);
     setTimeout(() => render(), 300);
   });
 }
@@ -641,6 +716,7 @@ function render(){
       document.getElementById("loading").style.display = "none";
       document.getElementById("error-display").style.display = "none";
       document.getElementById("admin-content").style.display = "block";
+      renderCategoryLocks();
       
       const teamListHTML = teams.map(team => 
         `<div class="team-tag" role="listitem">
@@ -657,7 +733,8 @@ function render(){
         html += `<td scope="row">${team}</td>`;
         
         for(let r=1; r<=4; r++){
-          const state = states[r][team] || "revoked";
+          const roundKey = `round${r}`;
+          const state = (states[roundKey] && states[roundKey][team]) ? states[roundKey][team] : "revoked";
           html += `
             <td>
               <button onclick="cycle(${r},'${team}')" class="btn" aria-label="Change ${team} Round ${r} status. Current: ${state}">
@@ -689,11 +766,13 @@ async function initialize() {
     return;
   }
   
-  getTeamList((teams) => {
-    if(teams.length === 0 || !teams){
-      setTeamList(["ALPHA", "BETA", "GAMMA"]);
-    }
-    render();
+  loadCategoryLocks(() => {
+    getTeamList((teams) => {
+      if(teams.length === 0 || !teams){
+        setTeamList(["ALPHA", "BETA", "GAMMA"]);
+      }
+      render();
+    });
   });
 }
 

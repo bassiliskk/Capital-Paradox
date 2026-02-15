@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Round 3: Divide and Conquer - CAPITAL Paradox">
+    <title>Divide and Conquer | CAPITAL Paradox</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'capital-red': '#DC2626',
+                        'void-black': '#050505',
+                    },
+                    fontFamily: {
+                        'display': ['Bebas Neue', 'sans-serif'],
+                        'script': ['Dancing Script', 'cursive'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                        'body': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #050505; color: #FAFAFA; }
+
+        .grid-bg {
+            background-image: linear-gradient(rgba(220, 38, 38, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(220, 38, 38, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: #DC2626;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+        }
+
+        .nav-link:hover::after {
+            transform: translateX(0);
+        }
+
+        .code-input {
+            background: rgba(220, 38, 38, 0.1);
+            border: 2px solid #DC2626;
+            color: white;
+            text-align: center;
+            letter-spacing: 0.2em;
+        }
+
+        .code-input:focus {
+            background: rgba(220, 38, 38, 0.2);
+            outline: none;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .unlock-btn {
+            background: #DC2626;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .unlock-btn:hover {
+            background: white;
+            color: #DC2626;
+        }
+
+        .loading-spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #DC2626;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 9999;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            animation: slideIn 0.3s ease-out;
+            max-width: 90%;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.success { background: #22c55e; color: white; }
+        .toast.error { background: #ef4444; color: white; }
+        .toast.warning { background: #f59e0b; color: white; }
+        .toast.info { background: #3b82f6; color: white; }
+
+        .content-padding { padding-bottom: 80px; }
+
+        /* Card Category Tabs */
+        .category-tab {
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .category-tab.active {
+            border-bottom-color: #DC2626;
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .category-tab:hover {
+            background: rgba(220, 38, 38, 0.05);
+        }
+
+        /* Card Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        @media (max-width: 640px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .game-card {
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            background: rgba(5, 5, 5, 0.8);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            border-color: #DC2626;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.2);
+        }
+
+        .game-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s;
+        }
+
+        .game-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .card-info {
+            background: linear-gradient(to top, rgba(5, 5, 5, 0.95), transparent);
+        }
+
+        /* Modal for card details */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 5, 0.9);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #0a0a0a;
+            border: 2px solid #DC2626;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 0 60px rgba(220, 38, 38, 0.3);
+        }
+
+        .modal-close {
+            position: sticky;
+            top: 0;
+            background: #DC2626;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 10;
+            margin-left: auto;
+        }
+
+        .modal-close:hover {
+            background: white;
+            color: #DC2626;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(5, 5, 5, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid rgba(220, 38, 38, 0.3);
+                z-index: 50;
+                padding: 12px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .locked-overlay {
+            background: rgba(5, 5, 5, 0.95);
+            border: 2px solid #DC2626;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .locked-overlay::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(220, 38, 38, 0.03) 10px,
+                rgba(220, 38, 38, 0.03) 20px
+            );
+            animation: diagonal-scan 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes diagonal-scan {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50%, 50%); }
+        }
+
+        .access-denied {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="font-body bg-void-black content-padding">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-void-black/95 backdrop-blur-md border-b border-capital-red/20" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="index.html" class="flex items-center space-x-2" aria-label="CAPITAL Paradox Home">
+                    <span class="font-display text-3xl tracking-wider text-white">CAPITAL</span>
+                    <span class="font-script text-2xl text-capital-red -rotate-6">Paradox</span>
+                </a>
+                <div class="hidden md:flex space-x-8 font-mono text-sm tracking-widest items-center">
+                    <a href="index.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">HOME</a>
+                    <a href="rounds.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">ROUNDS</a>
+                    <a href="rules.html" class="nav-link relative text-gray-400 hover:text-white py-2 transition-colors">RULES</a>
+                    <button id="team-logout" class="hidden border border-capital-red text-capital-red px-5 py-2 hover:bg-capital-red hover:text-white transition-all">
+                        LOGOUT
+                    </button>
+                </div>
+                <button 
+                    class="md:hidden text-white" 
+                    onclick="toggleMobileMenu()"
+                    aria-label="Toggle mobile menu"
+                    aria-expanded="false"
+                    id="mobile-menu-button">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-void-black border-b border-capital-red/20">
+            <div class="px-4 pt-2 pb-6 space-y-2 font-mono">
+                <a href="index.html" class="block py-2 text-gray-400 hover:text-white">HOME</a>
+                <a href="rounds.html" class="block py-2 text-gray-400 hover:text-white">ROUNDS</a>
+                <a href="rules.html" class="block py-2 text-gray-400 hover:text-white">RULES</a>
+                <button id="team-logout-mobile" class="hidden w-full text-left py-2 text-capital-red">LOGOUT</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Access Denied Screen -->
+    <div id="access-denied-screen" style="display: none;" class="min-h-screen flex items-center justify-center px-4 pt-20">
+        <div class="locked-overlay max-w-2xl w-full p-8 md:p-12 text-center rounded-lg">
+            <div class="access-denied">
+                <i data-lucide="shield-alert" class="w-20 h-20 text-capital-red mx-auto mb-6"></i>
+                <h1 class="font-display text-4xl md:text-6xl text-white mb-4">ACCESS DENIED</h1>
+                <div class="font-mono text-capital-red text-xl mb-6 tracking-widest">
+                    ROUND 3 LOCKED
+                </div>
+                <p class="text-gray-300 font-mono text-sm mb-8 max-w-lg mx-auto leading-relaxed">
+                    Your team has not been granted access to Round 3. Only teams with Round 3 access or passed status can enter.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="rounds.html" class="bg-capital-red text-white font-mono px-8 py-3 hover:bg-white hover:text-capital-red transition-all">
+                        BACK TO ROUNDS
+                    </a>
+                    <a href="index.html" class="border border-gray-700 text-gray-300 font-mono px-8 py-3 hover:border-capital-red hover:text-white transition-all">
+                        HOME
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="display: flex;" class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-400 font-mono text-sm">Verifying access...</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" style="display: none;" class="pt-24 pb-16">
+        <!-- Header -->
+        <section class="bg-neutral-900 border-b border-capital-red/20 py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div>
+                        <span class="font-mono text-capital-red text-sm tracking-widest uppercase">Round 3</span>
+                        <h1 class="font-display text-4xl sm:text-5xl md:text-7xl text-white mt-2">DIVIDE AND<br>CONQUER</h1>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-mono text-xs text-gray-500 uppercase">Team Status</p>
+                        <p id="team-welcome" class="font-mono text-xl text-capital-red font-bold">TEAM ALPHA</p>
+                    </div>
+                </div>
+                <p class="text-gray-300 font-mono text-sm max-w-3xl">
+                    Navigate the complex trading ecosystem. Each card represents a strategic resource, development opportunity, special action, or crisis event. Study them carefully—your survival depends on understanding every detail.
+                </p>
+            </div>
+        </section>
+
+        <!-- Category Tabs -->
+        <section class="border-b border-capital-red/20 bg-void-black sticky top-20 z-40">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex overflow-x-auto no-scrollbar">
+                    <button onclick="switchCategory('resource')" id="tab-resource" class="category-tab active flex-1 min-w-[140px] py-4 px-6 font-mono text-xs tracking-widest uppercase transition-all">
+                        <div class="flex items-center justify-center gap-2">
+                            <i data-lucide="box" class="w-4 h-4"></i>
+                            <span>Resources</span>
+                        </div>
+                        <div class="text-capital-red text-xs mt-1">19 Cards</div>
+                    </button>
+                    <button onclick="switchCategory('development')" id="tab-development" class="category-tab flex-1 min-w-[140px] py-4 px-6 font-mono text-xs tracking-widest uppercase transition-all">
+                        <div class="flex items-center justify-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            <span>Development</span>
+                        </div>
+                        <div class="text-gray-500 text-xs mt-1">5 Cards</div>
+                    </button>
+                    <button onclick="switchCategory('war_special')" id="tab-war_special" class="category-tab flex-1 min-w-[140px] py-4 px-6 font-mono text-xs tracking-widest uppercase transition-all">
+                        <div class="flex items-center justify-center gap-2">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <span>War & Special</span>
+                        </div>
+                        <div class="text-gray-500 text-xs mt-1">8 Cards</div>
+                    </button>
+                    <button onclick="switchCategory('crisis')" id="tab-crisis" class="category-tab flex-1 min-w-[140px] py-4 px-6 font-mono text-xs tracking-widest uppercase transition-all">
+                        <div class="flex items-center justify-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            <span>Crisis</span>
+                        </div>
+                        <div class="text-gray-500 text-xs mt-1">6 Cards</div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cards Container -->
+        <section class="py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <!-- Resource Cards -->
+                <div id="category-resource" class="category-content">
+                    <div class="mb-8">
+                        <h2 class="font-display text-3xl text-white mb-2">Resource Cards</h2>
+                        <p class="text-gray-400 font-mono text-sm">Essential assets and commodities for building your empire</p>
+                    </div>
+                    <div class="card-grid" id="resource-cards"></div>
+                </div>
+
+                <!-- Development Cards -->
+                <div id="category-development" class="category-content" style="display: none;">
+                    <div class="mb-8">
+                        <h2 class="font-display text-3xl text-white mb-2">Development Cards</h2>
+                        <p class="text-gray-400 font-mono text-sm">Strategic advancements to gain competitive advantages</p>
+                    </div>
+                    <div class="card-grid" id="development-cards"></div>
+                </div>
+
+                <!-- War & Special Cards -->
+                <div id="category-war_special" class="category-content" style="display: none;">
+                    <div class="mb-8">
+                        <h2 class="font-display text-3xl text-white mb-2">War & Special Cards</h2>
+                        <p class="text-gray-400 font-mono text-sm">Aggressive actions and unique opportunities</p>
+                    </div>
+                    <div class="card-grid" id="war_special-cards"></div>
+                </div>
+
+                <!-- Crisis Cards -->
+                <div id="category-crisis" class="category-content" style="display: none;">
+                    <div class="mb-8">
+                        <h2 class="font-display text-3xl text-white mb-2">Crisis Cards</h2>
+                        <p class="text-gray-400 font-mono text-sm">Unexpected events that reshape the game</p>
+                    </div>
+                    <div class="card-grid" id="crisis-cards"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Card Detail Modal -->
+    <div id="card-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <button onclick="closeModal()" class="modal-close">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="p-6 md:p-8">
+                <div id="modal-card-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav md:hidden" role="navigation" aria-label="Mobile navigation">
+        <a href="rounds.html" class="flex flex-col items-center text-gray-400 hover:text-white">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">ROUNDS</span>
+        </a>
+        <button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="flex flex-col items-center text-gray-400 hover:text-white">
+            <i data-lucide="chevron-up" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">TOP</span>
+        </button>
+        <a href="index.html" class="flex flex-col items-center text-gray-500 hover:text-white">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-[10px] mt-1 font-mono">HOME</span>
+        </a>
+    </nav>
+
+    <!-- Load Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // ==========================================
+        // CARD DATA STRUCTURE
+        // ==========================================
+        const cardData = {
+            resource: [
+                { id: 1, name: "Data Networks", description: "The digital web of information and connectivity that links markets, institutions, and decision makers. Control of data flows often decides who reacts first and who gets left behind.", effect: "Improves intelligence and coordination across your portfolio, reducing uncertainty in trades and negotiations.", howToUse: "Use alongside Technology or AI Systems to maximize insight and time-sensitive deals.", image: "cards/resource/resource_card_01.jpeg" },
+                { id: 2, name: "Defense Forces", description: "Trained military personnel safeguarding national security and protecting key assets. A credible defense stabilizes borders and deters opportunistic attacks.", effect: "Strengthens security posture and raises the cost for rivals attempting coercion or conflict.", howToUse: "Pair with Modern Weapons or a Defense Pact to create a strong deterrent.", image: "cards/resource/resource_card_02.jpeg" },
+                { id: 3, name: "Gold", description: "Precious metal that drives economies and symbolizes wealth. It remains a trusted store of value when currencies wobble.", effect: "Provides resilient value during volatility and helps stabilize economic negotiations.", howToUse: "Hold during crises or trade for critical shortages when markets tighten.", image: "cards/resource/resource_card_03.jpeg" },
+                { id: 4, name: "Grain", description: "Essential crop for feeding populations and maintaining stability. Food security keeps societies calm and productive.", effect: "Improves domestic stability and reduces pressure during supply shocks.", howToUse: "Trade to secure alliances or hold to withstand crisis events.", image: "cards/resource/resource_card_04.jpeg" },
+                { id: 5, name: "Infrastructure", description: "Foundations that support economies and enable civilization. Roads, ports, grids, and logistics unlock long-term efficiency.", effect: "Boosts reliability of production and distribution, increasing overall resilience.", howToUse: "Combine with Trade Routes or Machinery to amplify resource throughput.", image: "cards/resource/resource_card_05.jpeg" },
+                { id: 6, name: "Iron", description: "A fundamental metal for construction and war. It underpins heavy industry and strategic manufacturing.", effect: "Increases industrial capacity and supports rapid buildout of assets.", howToUse: "Use to reinforce construction or to supply Military Upgrade strategies.", image: "cards/resource/resource_card_06.jpeg" },
+                { id: 7, name: "Labor", description: "Workforce that drives production and progress. Skilled and abundant labor converts resources into power.", effect: "Improves output efficiency and accelerates development timelines.", howToUse: "Pair with Infrastructure Boost or Machinery to maximize productivity.", image: "cards/resource/resource_card_07.jpeg" },
+                { id: 8, name: "Machinery", description: "Industries powered by mechanical advancement. Machines multiply capacity and reduce unit cost.", effect: "Enhances production scale and improves conversion of raw resources.", howToUse: "Deploy with Iron or Labor to optimize industrial expansion.", image: "cards/resource/resource_card_08.jpeg" },
+                { id: 9, name: "Modern Weapons", description: "Sophisticated armaments affirming military dominance. Precision and reach create strategic leverage.", effect: "Raises combat readiness and deterrence against hostile moves.", howToUse: "Synergize with Defense Forces or Military Upgrade for maximum impact.", image: "cards/resource/resource_card_09.jpeg" },
+                { id: 10, name: "Oil", description: "Resource essential for fueling industries and powering economies. Control of oil flows shapes global momentum.", effect: "Strengthens energy security and maintains industrial continuity.", howToUse: "Trade during shortages or use to sustain high output strategies.", image: "cards/resource/resource_card_10.jpeg" },
+                { id: 11, name: "Rare Earth Metals", description: "Critical components for advanced technologies and modern devices. These elements are small in quantity but massive in strategic value.", effect: "Unlocks advanced tech capabilities and upgrades modernization potential.", howToUse: "Pair with Technology or AI Systems to accelerate innovation plays.", image: "cards/resource/resource_card_11.jpeg" },
+                { id: 12, name: "Renewable Energy", description: "Sustainable resources that fuel growth and influence power. Long-term energy independence reduces vulnerability.", effect: "Improves long-term stability and reduces exposure to energy shocks.", howToUse: "Use to hedge against Energy Shock or to support Sustainable Infrastructure.", image: "cards/resource/resource_card_12.jpeg" },
+                { id: 13, name: "Sustainable Infrastructure", description: "Eco-friendly development for resilient growth. Clean systems protect against disruption and future constraints.", effect: "Boosts resilience and lowers risk from environmental or policy disruptions.", howToUse: "Combine with Renewable Energy to reinforce long-term durability.", image: "cards/resource/resource_card_13.jpeg" },
+                { id: 14, name: "Technology", description: "Innovation that drives economic growth and defines the future. It transforms resources into exponential advantage.", effect: "Accelerates development across sectors and sharpens strategic options.", howToUse: "Layer with Data Networks or Rare Earth Metals to unlock high leverage plays.", image: "cards/resource/resource_card_14.jpeg" },
+                { id: 15, name: "Trade Routes", description: "Commercial pathways that connect markets and empires. The ability to move goods is the ability to survive.", effect: "Improves exchange capacity and opens access to external resources.", howToUse: "Use to broker deals or shift surplus into critical deficits.", image: "cards/resource/resource_card_15.jpeg" },
+                { id: 16, name: "Water", description: "Vital resource for sustaining life and stabilizing civilizations. Control of water means control of survival.", effect: "Increases internal stability and reduces vulnerability to crisis events.", howToUse: "Hold to withstand disruption or trade for high value concessions.", image: "cards/resource/resource_card_16.jpeg" },
+                { id: 17, name: "Advanced Infrastructure", description: "Cutting-edge facilities that drive innovation and power. This goes beyond basic systems to unlock elite efficiency.", effect: "Upgrades productivity and strengthens long-term competitiveness.", howToUse: "Pair with Technology Breakthrough to maximize growth momentum.", image: "cards/resource/resource_card_17.jpeg" },
+                { id: 18, name: "AI Systems", description: "Advanced technology for strategic insight and automation. AI turns data into predictions and speed.", effect: "Improves strategic foresight and decision precision.", howToUse: "Combine with Data Networks for intelligence dominance.", image: "cards/resource/resource_card_18.jpeg" },
+                { id: 19, name: "Capital Wealth", description: "Financial resources that fuel growth and influence power. Liquid capital converts into almost any advantage.", effect: "Increases flexibility for trades, investments, and rapid pivots.", howToUse: "Deploy when negotiation leverage or emergency liquidity is needed.", image: "cards/resource/resource_card_19.jpeg" }
+            ],
+            development: [
+                { id: 1, name: "Cultural Influence", description: "Project your civilization's philosophies, arts, and traditions abroad to sway foreign opinion, attract allies, and expand your sphere of influence. Soft power can win where force fails.", effect: "Improves diplomatic leverage and increases the success of negotiations.", howToUse: "Use early to build alliances and secure favorable trade terms.", image: "cards/development/development_card_01.jpeg" },
+                { id: 2, name: "Economic Reforms", description: "Revamp policies to stimulate growth and strengthen the economy. Efficient systems unlock stability and long-term prosperity.", effect: "Boosts economic stability and improves resource conversion efficiency.", howToUse: "Activate before major trades or expansion phases to maximize gains.", image: "cards/development/development_card_02.jpeg" },
+                { id: 3, name: "Infrastructure Boost", description: "Accelerate construction and enhance resource output for rapid development. Fast buildout can change the balance of power.", effect: "Increases output capacity and shortens development timelines.", howToUse: "Pair with Labor or Machinery for a compounding effect.", image: "cards/development/development_card_03.jpeg" },
+                { id: 4, name: "Military Upgrade", description: "Enhance the strength and capabilities of your armed forces. Better training, equipment, and tactics create dominance.", effect: "Raises military readiness and improves deterrence.", howToUse: "Use before conflicts or to reinforce borders after escalation.", image: "cards/development/development_card_04.jpeg" },
+                { id: 5, name: "Technology Breakthrough", description: "Achieve a major scientific breakthrough, revolutionizing society and unlocking unprecedented advancements in industry, warfare, and economics. A leap forward reshapes strategy.", effect: "Unlocks high-impact synergies across multiple resource types.", howToUse: "Trigger when you hold Technology, AI Systems, or Rare Earth Metals.", image: "cards/development/development_card_05.jpeg" }
+            ],
+            war_special: [
+                { id: 1, name: "Military Boost Cards", description: "Deploy powerful war cards to bolster your military strength during conflicts, providing enhanced tactics and specialized units. A surge of force can change outcomes.", effect: "+3 MILITARY POWER · ONE-TIME USE", howToUse: "Play during a conflict turn to gain a short-term advantage.", image: "cards/war_special/war_special_card_01.jpeg" },
+                { id: 2, name: "Strategic Invasion", description: "Launch a full-scale military assault, occupying enemy territory and seizing key strategic locations. High risk, high impact.", effect: "+5 MILITARY POWER · ONE-TIME USE", howToUse: "Use when you need decisive momentum or to capture a critical resource.", image: "cards/war_special/war_special_card_02.jpeg" },
+                { id: 3, name: "Defense Pact", description: "Form a military alliance with an ally, countering incoming attacks by providing mutual defense. Cooperation deters aggression.", effect: "+6 MILITARY POWER · COUNTER ACTIVE", howToUse: "Activate in response to an attack to neutralize threats.", image: "cards/war_special/war_special_card_03.jpeg" },
+                { id: 4, name: "Trade Embargo", description: "Enact a blockade prohibiting trade with a rival nation, disrupting supply chains and causing economic turmoil. Isolation is a weapon.", effect: "+0 ECONOMIC · COUNTER ACTIVE", howToUse: "Play to block a rival's trade advantage or force concessions.", image: "cards/war_special/war_special_card_04.jpeg" },
+                { id: 5, name: "Economic Sanction", description: "Restrict access to financial markets by freezing assets and imposing harsh economic restrictions. Pressure without invasion.", effect: "+0 ECONOMIC · PERSISTENT", howToUse: "Apply to weaken a rival over time and reduce their leverage.", image: "cards/war_special/war_special_card_05.jpeg" },
+                { id: 6, name: "Global Crisis", description: "Global upheaval from either natural disaster, disease, or global war plunges all nations into a state of chaos. Survival becomes the priority.", effect: "+0 ECONOMIC · PERSISTENT", howToUse: "Use as a disruptive event to reset advantages and slow competitors.", image: "cards/war_special/war_special_card_06.jpeg" },
+                { id: 7, name: "Resource Seizure", description: "Capture and control critical resources from a rival nation, impacting their economy and shifting balance. Targeted grabs can reshape strategy.", effect: "+2 EXTRA RESOURCES · ONE-TIME USE", howToUse: "Trigger when an opponent depends heavily on a single resource.", image: "cards/war_special/war_special_card_07.jpeg" },
+                { id: 8, name: "Diplomatic Override", description: "Exert diplomatic influence to establish peace, neutralizing an active war event and ceasing all hostilities. Calm ends escalation.", effect: "EXTRA RESOURCES · ONE-TIME USE", howToUse: "Play to end conflict when prolonged war harms your position.", image: "cards/war_special/war_special_card_08.jpeg" }
+            ],
+            crisis: [
+                { id: 1, name: "Global Market Crash", description: "The stock market collapses worldwide, draining confidence and collapsing valuations. Panic spreads faster than information.", effect: "All players randomly discard half of their Resource cards.", howToUse: "Apply to disrupt leaders and force a wide reset of resource control.", image: "cards/crisis/crisis_card_01.jpeg" },
+                { id: 2, name: "Pandemic Outbreak", description: "A widespread disease outbreak ravages the world, freezing movement and straining systems. Supply chains fracture under pressure.", effect: "All players discard two Resource cards immediately.", howToUse: "Use to weaken overextended rivals and slow aggressive expansion.", image: "cards/crisis/crisis_card_02.jpeg" },
+                { id: 3, name: "Natural Disaster", description: "A cataclysmic natural disaster strikes, inflicting damage to all and destabilizing growth plans. Recovery takes time and cost.", effect: "All players randomly discard one Development card.", howToUse: "Trigger to delay opponents' upgrades and long-term plans.", image: "cards/crisis/crisis_card_03.jpeg" },
+                { id: 4, name: "Energy Shock", description: "An energy crisis triggers massive disruptions and halts production lines. Stability becomes a race against shortages.", effect: "All players discard three Resource cards immediately.", howToUse: "Use when energy-heavy players are positioned to surge.", image: "cards/crisis/crisis_card_04.jpeg" },
+                { id: 5, name: "Hyperinflation", description: "Runaway inflation devastates economies and erodes purchasing power. Prices spiral while trust collapses.", effect: "All players discard half of their Resource and Development cards.", howToUse: "Deploy to force hard resets and destabilize economic dominance.", image: "cards/crisis/crisis_card_05.jpeg" },
+                { id: 6, name: "Cyber Collapse", description: "A devastating cyber attack paralyzes digital systems and derails coordination. Critical networks go dark at once.", effect: "All players randomly discard one card from their hand.", howToUse: "Use to create uncertainty and break planned sequencing.", image: "cards/crisis/crisis_card_06.jpeg" }
+            ]
+        };
+
+        let currentTeam = null;
+        let currentCategory = 'resource';
+        const TEAM_SESSION_KEY = "capital_team_session";
+        const CATEGORY_LABELS = {
+            resource: "Resources",
+            development: "Development",
+            war_special: "War & Special",
+            crisis: "Crisis"
+        };
+        let categoryLocks = {
+            resource: false,
+            development: false,
+            war_special: false,
+            crisis: false
+        };
+
+        // ==========================================
+        // SESSION MANAGEMENT
+        // ==========================================
+        function getTeamSession() {
+            return sessionStorage.getItem(TEAM_SESSION_KEY);
+        }
+
+        function setTeamSession(team) {
+            sessionStorage.setItem(TEAM_SESSION_KEY, team);
+        }
+
+        function clearTeamSession() {
+            sessionStorage.removeItem(TEAM_SESSION_KEY);
+        }
+
+        function logout() {
+            clearTeamSession();
+            window.location.href = "rounds.html";
+        }
+
+        // ==========================================
+        // ACCESS CONTROL
+        // ==========================================
+        async function checkRound3Access(team) {
+            if (!database) {
+                console.error("Firebase not initialized");
+                return false;
+            }
+
+            try {
+                const snapshot = await database.ref(`teamStates/round3/${team}`).once('value');
+                const status = snapshot.val();
+                
+                // Team must have "access" or "passed" status for round 3
+                return status === "access" || status === "passed";
+            } catch (error) {
+                console.error("Error checking round 3 access:", error);
+                return false;
+            }
+        }
+
+        // ==========================================
+        // UI UPDATES
+        // ==========================================
+        function updateLogoutUI(team) {
+            const logoutBtn = document.getElementById("team-logout");
+            const logoutBtnMobile = document.getElementById("team-logout-mobile");
+            
+            if (team) {
+                if (logoutBtn) {
+                    logoutBtn.classList.remove("hidden");
+                    logoutBtn.onclick = logout;
+                }
+                if (logoutBtnMobile) {
+                    logoutBtnMobile.classList.remove("hidden");
+                    logoutBtnMobile.onclick = logout;
+                }
+            } else {
+                if (logoutBtn) logoutBtn.classList.add("hidden");
+                if (logoutBtnMobile) logoutBtnMobile.classList.add("hidden");
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ==========================================
+        // CATEGORY SWITCHING
+        // ==========================================
+        function switchCategory(category) {
+            if (categoryLocks[category]) {
+                showToast(`${CATEGORY_LABELS[category] || "This category"} is locked.`, 'warning');
+                return;
+            }
+            currentCategory = category;
+            
+            // Update tabs
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(`tab-${category}`).classList.add('active');
+            
+            // Update content visibility
+            document.querySelectorAll('.category-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById(`category-${category}`).style.display = 'block';
+            
+            // Update tab colors
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                const count = tab.querySelector('div:last-child');
+                if (tab.classList.contains('active')) {
+                    count.classList.remove('text-gray-500');
+                    count.classList.add('text-capital-red');
+                } else {
+                    count.classList.remove('text-capital-red');
+                    count.classList.add('text-gray-500');
+                }
+            });
+        }
+
+        // ==========================================
+        // RENDER CARDS
+        // ==========================================
+        function renderCards() {
+            Object.keys(cardData).forEach(category => {
+                const container = document.getElementById(`${category}-cards`);
+                if (!container) return;
+                
+                container.innerHTML = cardData[category].map(card => `
+                    <div class="game-card rounded-lg overflow-hidden" onclick="openCardModal('${category}', ${card.id})">
+                        <div class="relative">
+                            <img src="${card.image}" alt="${card.name}" loading="lazy" />
+                            <div class="absolute bottom-0 left-0 right-0 card-info p-4">
+                                <p class="font-mono text-xs text-capital-red uppercase tracking-wider mb-1">
+                                    ${category.replace('_', ' & ')}
+                                </p>
+                                <h3 class="font-display text-lg text-white">${card.name}</h3>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // ==========================================
+        // MODAL FUNCTIONS
+        // ==========================================
+        function openCardModal(category, cardId) {
+            const card = cardData[category].find(c => c.id === cardId);
+            if (!card) return;
+            
+            const modalContent = document.getElementById('modal-card-content');
+            modalContent.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                            <p class="font-mono text-xs text-capital-red uppercase tracking-wider mb-2">
+                                ${category.replace('_', ' & ')}
+                            </p>
+                            <h2 class="font-display text-3xl md:text-4xl text-white mb-4">${card.name}</h2>
+                    </div>
+                    
+                    <div class="border border-capital-red/30 rounded-lg overflow-hidden">
+                        <img src="${card.image}" alt="${card.name}" class="w-full" />
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-gray-900/50 border border-gray-800 p-4 rounded-lg">
+                            <h3 class="font-mono text-xs uppercase text-gray-500 mb-2">Description</h3>
+                            <p class="text-gray-300 font-mono text-sm leading-relaxed">
+                                ${card.description || '<span class="text-gray-600 italic">Description will be provided during the round</span>'}
+                            </p>
+                        </div>
+                        
+                        <div class="bg-gray-900/50 border border-gray-800 p-4 rounded-lg">
+                            <h3 class="font-mono text-xs uppercase text-gray-500 mb-2">Effect</h3>
+                            <p class="text-gray-300 font-mono text-sm leading-relaxed">
+                                ${card.effect || '<span class="text-gray-600 italic">Effect details will be provided during the round</span>'}
+                            </p>
+                        </div>
+
+                        <div class="bg-gray-900/50 border border-gray-800 p-4 rounded-lg">
+                            <h3 class="font-mono text-xs uppercase text-gray-500 mb-2">How To Use</h3>
+                            <p class="text-gray-300 font-mono text-sm leading-relaxed">
+                                ${card.howToUse || '<span class="text-gray-600 italic">How to use will be provided during the round</span>'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('card-modal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('card-modal').classList.remove('active');
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('card-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // ==========================================
+        // MOBILE MENU
+        // ==========================================
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            
+            menu.classList.toggle('hidden');
+            button.setAttribute('aria-expanded', !isExpanded);
+        }
+
+        // ==========================================
+        // CATEGORY LOCKS
+        // ==========================================
+        function subscribeCategoryLocks() {
+            if (!database) {
+                return;
+            }
+            database.ref('cardCategoryLocks').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                categoryLocks = {
+                    resource: data.resource === true,
+                    development: data.development === true,
+                    war_special: data.war_special === true,
+                    crisis: data.crisis === true
+                };
+                applyCategoryLocks();
+            }, (error) => {
+                console.error("Error loading category locks:", error);
+            });
+        }
+
+        function applyCategoryLocks() {
+            const categories = Object.keys(categoryLocks);
+            const unlocked = categories.filter((key) => categoryLocks[key] !== true);
+
+            categories.forEach((key) => {
+                const tab = document.getElementById(`tab-${key}`);
+                const content = document.getElementById(`category-${key}`);
+                const locked = categoryLocks[key] === true;
+                if (tab) tab.style.display = locked ? "none" : "";
+                if (content && locked) content.style.display = "none";
+            });
+
+            if (unlocked.length === 0) {
+                showToast("Card categories will be revealed soon.", "warning");
+                return;
+            }
+
+            if (categoryLocks[currentCategory]) {
+                switchCategory(unlocked[0]);
+            } else {
+                switchCategory(currentCategory);
+            }
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            
+            if (!menu.classList.contains('hidden') && 
+                !menu.contains(event.target) && 
+                !button.contains(event.target)) {
+                menu.classList.add('hidden');
+                button.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        async function initialize() {
+            const team = getTeamSession();
+            
+            if (!team) {
+                window.location.href = "rounds.html";
+                return;
+            }
+            
+            currentTeam = team;
+            updateLogoutUI(team);
+            
+            // Update team welcome
+            const teamWelcome = document.getElementById('team-welcome');
+            if (teamWelcome) {
+                teamWelcome.textContent = `TEAM ${team}`;
+            }
+            
+            // Check access
+            const hasAccess = await checkRound3Access(team);
+            
+            document.getElementById('loading-screen').style.display = 'none';
+            
+            if (!hasAccess) {
+                document.getElementById('access-denied-screen').style.display = 'flex';
+                return;
+            }
+            
+            // Show main content
+            document.getElementById('main-content').style.display = 'block';
+            subscribeCategoryLocks();
+            renderCards();
+            lucide.createIcons();
+        }
+
+        // Run on page load
+        window.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
